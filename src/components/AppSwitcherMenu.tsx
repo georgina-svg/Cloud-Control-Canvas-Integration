@@ -32,6 +32,26 @@ const FAVORITES_ITEMS = [
   { id: 'meraki-users', label: 'meraki.com/users', iconSrc: figmaAssets.iconMerakiDefault },
 ]
 
+/* IDs that are currently present in the header nav */
+const HEADER_PINNED_IDS = new Set(['meraki', 'intersight', 'agent-studio', 'admin'])
+
+function PinIcon({ filled }: { filled: boolean }) {
+  return (
+    <svg
+      className={`app-switcher-pin-icon${filled ? ' app-switcher-pin-icon--filled' : ''}`}
+      width="14" height="14" viewBox="0 0 16 16" fill="none" aria-label={filled ? 'Pinned to header' : 'Not pinned'}
+    >
+      <path
+        d="M9.5 2.5L13.5 6.5L10.5 9.5L10 12L8 14L6.5 10.5L3.5 13.5L2.5 12.5L5.5 9.5L2 8L4 6L6.5 5.5L9.5 2.5Z"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinejoin="round"
+        fill={filled ? 'currentColor' : 'none'}
+      />
+    </svg>
+  )
+}
+
 export function AppSwitcherMenu({ onClose, onHomeClick }: AppSwitcherMenuProps) {
   const navigate = useNavigate()
   const location = useLocation()
@@ -80,6 +100,7 @@ export function AppSwitcherMenu({ onClose, onHomeClick }: AppSwitcherMenuProps) 
                     >
                       <img src={iconSrc} alt="" width={24} height={24} className="app-switcher-item-icon" />
                       <span>{label}</span>
+                      {id !== 'home' && <PinIcon filled={HEADER_PINNED_IDS.has(id)} />}
                     </button>
                   )
                 })}
@@ -101,6 +122,7 @@ export function AppSwitcherMenu({ onClose, onHomeClick }: AppSwitcherMenuProps) 
                   >
                     <img src={iconSrc} alt="" width={24} height={24} className="app-switcher-item-icon" />
                     <span>{label}</span>
+                    <PinIcon filled={HEADER_PINNED_IDS.has(id)} />
                   </button>
                 ))}
               </div>

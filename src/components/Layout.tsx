@@ -20,8 +20,14 @@ export function Layout() {
     setChatPanelOpen(false)
   }
 
-  const showModeSwitcher = location.pathname !== '/canvas/open' && location.pathname !== '/agent-studio'
-  const isOpenCanvas = location.pathname === '/canvas/open'
+  const showModeSwitcher =
+    location.pathname !== '/canvas/open' &&
+    !location.pathname.startsWith('/agent-studio') &&
+    !location.pathname.startsWith('/intersight') &&
+    !location.pathname.startsWith('/admin-console')
+  const isOpenCanvas =
+    location.pathname === '/canvas/open' ||
+    location.pathname.startsWith('/intersight/canvas')
 
   return (
     <div className={`ai-assistant-layout${isOpenCanvas ? ' ai-assistant-layout--open-canvas' : ''}`}>
@@ -29,7 +35,12 @@ export function Layout() {
       {showModeSwitcher && <ModeSwitcher />}
       <main
         className="ai-assistant-layout__main"
-        style={{
+        style={isOpenCanvas ? {
+          height: '100vh',
+          paddingTop: 0,
+          display: 'block',
+          overflow: 'hidden',
+        } : {
           paddingTop: 56,
           minHeight: 'calc(100vh - 56px)',
           display: 'block',

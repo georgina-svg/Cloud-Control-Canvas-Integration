@@ -23,9 +23,20 @@ export interface ChatPanelProps {
   canvasInline?: boolean
   /** When set, this thread id is shown as selected/highlighted (e.g. when opened from Actions page) */
   highlightThreadId?: string
+  /** Threads to prepend to the Today section (e.g. current chat from Agent Studio) */
+  injectedThreads?: { id: string; title: string }[]
 }
 
-export function ChatPanel({ onClose, overlay, docked, canvasInline, highlightThreadId }: ChatPanelProps) {
+const MAX_THREAD_TITLE = 50
+
+function truncateTitle(title: string): string {
+  const t = title.trim()
+  if (t.length <= MAX_THREAD_TITLE) return t
+  return t.slice(0, MAX_THREAD_TITLE - 1) + '…'
+}
+
+export function ChatPanel({ onClose, overlay, docked, canvasInline, highlightThreadId, injectedThreads = [] }: ChatPanelProps) {
+  const todayThreads = [...injectedThreads.map((t) => ({ id: t.id, title: truncateTitle(t.title), selected: false })), ...TODAY_THREADS]
   return (
     <aside
       className={`chat-panel${overlay ? ' chat-panel--overlay' : ''}${docked ? ' chat-panel--docked' : ''}${canvasInline ? ' chat-panel--canvas-inline' : ''}`}
@@ -66,7 +77,7 @@ export function ChatPanel({ onClose, overlay, docked, canvasInline, highlightThr
       <div className="chat-panel__history">
         <section className="chat-panel__section" aria-label="Today">
           <h3 className="chat-panel__section-label">Today</h3>
-          {TODAY_THREADS.map((thread) => {
+          {todayThreads.map((thread) => {
             const isSelected = thread.selected || thread.id === highlightThreadId
             return (
               <button

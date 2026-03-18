@@ -4,15 +4,15 @@ import {
   IconCaretDown,
   IconUser,
   IconHome,
-  IconUsers,
 } from './icons'
 import { AppSwitcherMenu } from './AppSwitcherMenu'
 
 const NAV_ITEMS = [
   { label: 'Home', path: '/', icon: IconHome },
   { label: 'Meraki', path: '#' },
-  { label: 'Security', path: '#' },
-  { label: 'Agent Studio', path: '/agent-studio', icon: IconUsers },
+  { label: 'Intersight', path: '/intersight' },
+  { label: 'Agent Studio', path: '/agent-studio' },
+  { label: 'Admin Console', path: '/admin-console' },
 ]
 
 export function Header({ onHomeClick }: { onHomeClick?: () => void }) {
@@ -78,15 +78,44 @@ export function Header({ onHomeClick }: { onHomeClick?: () => void }) {
                 )
               }
               if (path === '/agent-studio') {
+                const agentStudioActive = pathname === '/agent-studio' || pathname.startsWith('/agent-studio/')
                 return (
                   <button
                     key={label}
                     type="button"
-                    className={`ai-assistant__nav-btn ${active ? 'ai-assistant__nav-btn--active' : ''}`}
-                    aria-current={active ? 'page' : undefined}
+                    className={`ai-assistant__nav-btn ${agentStudioActive ? 'ai-assistant__nav-btn--active' : ''}`}
+                    aria-current={agentStudioActive ? 'page' : undefined}
                     onClick={() => navigate('/agent-studio')}
                   >
                     {Icon ? <Icon className="ai-assistant__nav-icon" /> : null}
+                    {label}
+                  </button>
+                )
+              }
+              if (path === '/intersight') {
+                const intersightActive = pathname === '/intersight' || pathname.startsWith('/intersight/')
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    className={`ai-assistant__nav-btn ${intersightActive ? 'ai-assistant__nav-btn--active' : ''}`}
+                    aria-current={intersightActive ? 'page' : undefined}
+                    onClick={() => navigate('/intersight')}
+                  >
+                    {label}
+                  </button>
+                )
+              }
+              if (path === '/admin-console') {
+                const adminActive = pathname === '/admin-console'
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    className={`ai-assistant__nav-btn ${adminActive ? 'ai-assistant__nav-btn--active' : ''}`}
+                    aria-current={adminActive ? 'page' : undefined}
+                    onClick={() => navigate('/admin-console')}
+                  >
                     {label}
                   </button>
                 )
@@ -106,6 +135,42 @@ export function Header({ onHomeClick }: { onHomeClick?: () => void }) {
           </nav>
         </div>
         <div className="ai-assistant__header-right">
+          {(pathname === '/intersight' || pathname.startsWith('/intersight/')) && (
+            <>
+              <button
+                type="button"
+                className={`ai-assistant__header-action-btn${pathname === '/intersight/canvas' ? ' ai-assistant__header-action-btn--active' : ''}`}
+                aria-label="Canvas"
+                aria-pressed={pathname === '/intersight/canvas'}
+                onClick={() => navigate('/intersight/canvas', {
+                  state: {
+                    breadcrumb: ['Intersight', 'Alerts', 'Active'],
+                    title: 'FI-6400 Fabric Interconnect Degraded',
+                    severity: 'P1',
+                    triggered: '2h 14m ago',
+                    affectedClients: 1247,
+                  }
+                })}
+              >
+                <img src="/canvas-icon.png" alt="" className="ai-assistant__header-action-btn-icon" aria-hidden />
+                Canvas
+              </button>
+              <button
+                type="button"
+                className="ai-assistant__header-action-btn"
+                aria-label="Assistant"
+              >
+                <img src="/assistant-icon.png" alt="" className="ai-assistant__header-action-btn-icon" aria-hidden />
+                Assistant
+              </button>
+            </>
+          )}
+          <button type="button" className="ai-assistant__icon-btn" aria-label="Alerts">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+              <path d="M8 1.5a4.5 4.5 0 0 1 4.5 4.5c0 2.5.5 3.5 1 4H2.5c.5-.5 1-1.5 1-4A4.5 4.5 0 0 1 8 1.5z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+              <path d="M6.5 13.5a1.5 1.5 0 0 0 3 0" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+            </svg>
+          </button>
           <button type="button" className="ai-assistant__icon-btn" aria-label="User account">
             <IconUser />
           </button>

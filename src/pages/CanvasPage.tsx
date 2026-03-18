@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   IconChart,
   IconFile,
@@ -37,6 +38,7 @@ const CANVAS_FILTER_OPTIONS = ['All canvases', 'Favorites', 'Created by me'] as 
 const CANVAS_SORT_OPTIONS = ['Newest', 'Oldest', 'Name A–Z'] as const
 
 export function CanvasPage() {
+  const navigate = useNavigate()
   const [threadPanelOpen, setThreadPanelOpen] = useState(false)
   const [templateDetails, setTemplateDetails] = useState<TemplateItem | null>(null)
   const [canvasFilter, setCanvasFilter] = useState<(typeof CANVAS_FILTER_OPTIONS)[number]>('All canvases')
@@ -81,7 +83,7 @@ export function CanvasPage() {
             The workspace for AgenticOps: bring telemetry, teams, and agents into one place.
             Ask once and see across domains; agents propose solutions and you approve execution.
           </p>
-          <button type="button" className="canvas-page__create-canvas ai-button ai-button--primary" aria-label="Create a new canvas">
+          <button type="button" className="canvas-page__create-canvas ai-button ai-button--primary" aria-label="Create a new canvas" onClick={() => navigate('/canvas/open')}>
             <span>Create a New Canvas</span>
           </button>
         </section>

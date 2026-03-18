@@ -354,3 +354,69 @@ export function IconSend({ className }: { className?: string }) {
     </svg>
   )
 }
+
+export function IconHeartPulse({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+    </svg>
+  )
+}
+
+export function IconShield({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    </svg>
+  )
+}
+
+export function IconBuildAgentColor({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <defs>
+        <linearGradient id="rocket-body" x1="4" y1="2" x2="20" y2="22" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#a78bfa"/>
+          <stop offset="1" stopColor="#6366f1"/>
+        </linearGradient>
+        <linearGradient id="rocket-flame" x1="8" y1="16" x2="16" y2="24" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#fb923c"/>
+          <stop offset="1" stopColor="#f59e0b"/>
+        </linearGradient>
+      </defs>
+      <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" fill="#f59e0b" opacity=".8"/>
+      <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" fill="url(#rocket-body)"/>
+      <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" fill="#818cf8" opacity=".7"/>
+      <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" fill="#818cf8" opacity=".7"/>
+      <circle cx="15" cy="9" r="1.5" fill="white" opacity=".9"/>
+    </svg>
+  )
+}
+
+export function IconKnowledgeBaseColor({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <defs>
+        <linearGradient id="doc-grad" x1="6" y1="2" x2="18" y2="22" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#34d399"/>
+          <stop offset="1" stopColor="#059669"/>
+        </linearGradient>
+      </defs>
+      <rect x="4" y="5" width="14" height="17" rx="1.5" fill="#0d9488" opacity=".25"/>
+      <rect x="6" y="3" width="14" height="17" rx="1.5" fill="#0d9488" opacity=".45"/>
+      <path d="M8 2h8a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="url(#doc-grad)"/>
+      <path d="M10 7h6M10 10h6M10 13h4" stroke="white" strokeWidth="1.4" strokeLinecap="round" opacity=".9"/>
+    </svg>
+  )
+}
+
+export function IconTopologyNodes({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <circle cx="12" cy="4" r="2" />
+      <circle cx="4" cy="20" r="2" />
+      <circle cx="20" cy="20" r="2" />
+      <path d="M12 6v6M9 15l-3.5 3M15 15l3.5 3M9 12h6" />
+    </svg>
+  )
+}
