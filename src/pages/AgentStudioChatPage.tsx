@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, useOutletContext } from 'react-router-dom'
+import type { LayoutOutletContext } from '../components/Layout'
 import { AgentStudioChatPanel } from '../components/AgentStudioChatPanel'
 import { ChatPanel } from '../components/ChatPanel'
 import type { ChatMessage } from '../components/AgentStudioChatPanel'
@@ -7,6 +8,7 @@ import type { ChatMessage } from '../components/AgentStudioChatPanel'
 export function AgentStudioChatPage() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { threads } = useOutletContext<LayoutOutletContext>()
   const initialMessage = (location.state as { initialMessage?: string } | null)?.initialMessage
 
   const [messages, setMessages] = useState<ChatMessage[]>(() =>
@@ -26,9 +28,8 @@ export function AgentStudioChatPage() {
 
   const currentThreadId = 'agent-studio-current'
   const currentThreadTitle = initialMessage?.trim() ?? ''
-  const injectedThreads = currentThreadTitle
-    ? [{ id: currentThreadId, title: currentThreadTitle }]
-    : undefined
+  const localThread = currentThreadTitle ? [{ id: currentThreadId, title: currentThreadTitle }] : []
+  const allThreads = [...localThread, ...threads]
 
   return (
     <div className="agent-studio-chat-page" role="main">
@@ -42,8 +43,8 @@ export function AgentStudioChatPage() {
           <ChatPanel
             overlay
             onClose={() => setThreadsPanelOpen(false)}
-            injectedThreads={injectedThreads}
-            highlightThreadId={injectedThreads ? currentThreadId : undefined}
+            injectedThreads={allThreads}
+            highlightThreadId={currentThreadTitle ? currentThreadId : undefined}
           />
         </>
       )}

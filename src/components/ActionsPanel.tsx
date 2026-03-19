@@ -26,7 +26,6 @@ const ACTIONS = [
     tag: 'Tag 1',
     assignee: 'First Last',
     assigneeInitial: 'F',
-    selected: true,
   },
   {
     id: '2',
@@ -37,7 +36,6 @@ const ACTIONS = [
     tag: 'Tag 2',
     assignee: null,
     assigneeInitial: null,
-    selected: false,
   },
   {
     id: '3',
@@ -48,15 +46,17 @@ const ACTIONS = [
     tag: 'Tag 1',
     assignee: 'Second User',
     assigneeInitial: 'S',
-    selected: false,
   },
 ]
 
 export interface ActionsPanelProps {
   onOpenChatPanel?: () => void
+  selectedActionId?: string | null
+  onSelectAction?: (id: string) => void
+  hideHamburger?: boolean
 }
 
-export function ActionsPanel({ onOpenChatPanel }: ActionsPanelProps) {
+export function ActionsPanel({ onOpenChatPanel, selectedActionId, onSelectAction, hideHamburger }: ActionsPanelProps) {
   const [activeTab, setActiveTab] = useState<TabId>('all')
   const [categoriesOpen, setCategoriesOpen] = useState(false)
   const [assigneeOpen, setAssigneeOpen] = useState(false)
@@ -91,14 +91,16 @@ export function ActionsPanel({ onOpenChatPanel }: ActionsPanelProps) {
   return (
     <aside className="actions-panel" aria-label="Actions menu">
       <div className="actions-panel__header">
-        <button
-          type="button"
-          className="actions-panel__collapse-btn"
-          onClick={handleHamburgerClick}
-          aria-label={onOpenChatPanel ? 'Open chat panel' : 'Collapse actions menu'}
-        >
-          <IconNav />
-        </button>
+        {!hideHamburger && (
+          <button
+            type="button"
+            className="actions-panel__collapse-btn"
+            onClick={handleHamburgerClick}
+            aria-label={onOpenChatPanel ? 'Open chat panel' : 'Collapse actions menu'}
+          >
+            <IconNav />
+          </button>
+        )}
       </div>
 
       <div className="actions-panel__tabs">
@@ -147,9 +149,10 @@ export function ActionsPanel({ onOpenChatPanel }: ActionsPanelProps) {
           <button
             key={action.id}
             type="button"
-            className={`actions-panel__card ${action.selected ? 'actions-panel__card--selected' : ''}`}
-            aria-pressed={action.selected}
+            className={`actions-panel__card ${selectedActionId === action.id ? 'actions-panel__card--selected' : ''}`}
+            aria-pressed={selectedActionId === action.id}
             aria-label={action.title}
+            onClick={() => onSelectAction?.(action.id)}
           >
             <div className="actions-panel__card-header">
               {action.status === 'negative' ? (

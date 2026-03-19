@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useOutletContext } from 'react-router-dom'
+import type { LayoutOutletContext } from '../components/Layout'
 import {
+  IconHeartPulse,
+  IconSettings,
   IconChart,
-  IconFile,
-  IconWifi,
-  IconGrid,
   IconDevice,
-  IconRocket,
+  IconShield,
+  IconTopologyNodes,
   IconDotsThree,
   IconSearch,
   IconCaretDown,
@@ -24,12 +25,25 @@ const CANVAS_LIST_ROWS = [
 ]
 
 const TEMPLATES = [
-  { title: 'Network Performance Analysis', description: 'Analyze network performance bottlenecks.', Icon: IconChart, color: 'canvas-card--blue' },
-  { title: 'Code Optimization and Debugging', description: 'Identify and resolve code inefficiencies.', Icon: IconFile, color: 'canvas-card--orange' },
-  { title: 'Network Chart Visualization', description: 'Visualize your network systems for better insights.', Icon: IconGrid, color: 'canvas-card--pink' },
-  { title: 'Packet Loss Root Cause Analysis', description: 'Pinpoint the source of packet loss issues.', Icon: IconWifi, color: 'canvas-card--green' },
-  { title: 'Real-time Network Monitoring', description: 'Monitor your network in real-time with key metrics.', Icon: IconDevice, color: 'canvas-card--purple' },
-  { title: 'Cloud Migration Strategy', description: 'Plan your cloud migration with this strategic template.', Icon: IconRocket, color: 'canvas-card--teal' },
+  {
+    title: 'Health & Overview',
+    description: 'Get a unified view of network health, alerts, and system status across your infrastructure.',
+    Icon: IconHeartPulse,
+    color: 'canvas-card--blue',
+    prompts: [
+      'How is my organization doing?',
+      'Which sites are down?',
+      'Are there any critical alerts?',
+      'Show me health trends for the past 14 days',
+      'Show me all sites with health scores below 80%',
+      'What is wrong with my network between yesterday and today?',
+    ],
+  },
+  { title: 'Troubleshooting', description: 'Diagnose and resolve issues fast with guided root cause analysis and remediation steps.', Icon: IconSettings, color: 'canvas-card--orange', prompts: [] },
+  { title: 'Performance & Trends', description: 'Analyze performance metrics and spot trends to proactively prevent degradation.', Icon: IconChart, color: 'canvas-card--pink', prompts: [] },
+  { title: 'Devices & Inventory', description: 'Explore device inventory, configurations, and connectivity across your network.', Icon: IconDevice, color: 'canvas-card--green', prompts: [] },
+  { title: 'Security & Access', description: 'Review access policies, detect anomalies, and strengthen your security posture.', Icon: IconShield, color: 'canvas-card--purple', prompts: [] },
+  { title: 'Visualization & Topology', description: 'Map and visualize your network topology for clearer situational awareness.', Icon: IconTopologyNodes, color: 'canvas-card--teal', prompts: [] },
 ]
 
 type TemplateItem = (typeof TEMPLATES)[number]
@@ -39,8 +53,10 @@ const CANVAS_SORT_OPTIONS = ['Newest', 'Oldest', 'Name A–Z'] as const
 
 export function CanvasPage() {
   const navigate = useNavigate()
+  const { threads } = useOutletContext<LayoutOutletContext>()
   const [threadPanelOpen, setThreadPanelOpen] = useState(false)
   const [templateDetails, setTemplateDetails] = useState<TemplateItem | null>(null)
+  const [expandedTemplate, setExpandedTemplate] = useState<string | null>(null)
   const [canvasFilter, setCanvasFilter] = useState<(typeof CANVAS_FILTER_OPTIONS)[number]>('All canvases')
   const [canvasSort, setCanvasSort] = useState<(typeof CANVAS_SORT_OPTIONS)[number]>('Newest')
   const [canvasFilterOpen, setCanvasFilterOpen] = useState(false)
@@ -71,7 +87,7 @@ export function CanvasPage() {
       />
 
       {threadPanelOpen && (
-        <ChatPanel onClose={() => setThreadPanelOpen(false)} canvasInline />
+        <ChatPanel onClose={() => setThreadPanelOpen(false)} canvasInline injectedThreads={threads} />
       )}
 
       <div className="canvas-page__content">
@@ -89,30 +105,47 @@ export function CanvasPage() {
         </section>
 
         <section className="canvas-page__section">
-          <h2 className="canvas-page__section-title">Or, Get Started with a Template</h2>
+          <h2 className="canvas-page__section-title">Prompt Library</h2>
           <div className="canvas-page__templates">
             {TEMPLATES.map((template) => {
-              const { title, description, Icon, color } = template
+              const { title, description, Icon, color, prompts } = template
+              const isExpanded = expandedTemplate === title
               return (
-                <article key={title} className={`canvas-page__template-card ${color}`}>
-                  <div className="canvas-page__template-top">
-                    <div className="canvas-page__template-icon">
-                      <Icon />
+                <article
+                  key={title}
+                  className={`canvas-page__template-card ${color}${isExpanded ? ' canvas-page__template-card--expanded' : ''}`}
+                  style={{ position: 'relative' }}
+                >
+                  <button
+                    type="button"
+                    className="canvas-page__template-header-btn"
+                    aria-expanded={isExpanded}
+                    onClick={() => setExpandedTemplate(isExpanded ? null : title)}
+                  >
+                    <div className="canvas-page__template-top">
+                      <div className="canvas-page__template-icon">
+                        <Icon />
+                      </div>
+                      <IconCaretDown className={`canvas-page__template-chevron${isExpanded ? ' canvas-page__template-chevron--open' : ''}`} />
                     </div>
-                    <button
-                      type="button"
-                      className="canvas-page__template-menu"
-                      aria-label={`Options for ${title}`}
-                      onClick={(e) => {
-                        e.preventDefault()
-                        setTemplateDetails(template)
-                      }}
-                    >
-                      <IconDotsThree />
-                    </button>
-                  </div>
-                  <h3 className="canvas-page__template-title">{title}</h3>
-                  <p className="canvas-page__template-description">{description}</p>
+                    <h3 className="canvas-page__template-title">{title}</h3>
+                    <p className="canvas-page__template-description">{description}</p>
+                  </button>
+                  {isExpanded && prompts.length > 0 && (
+                    <ul className="canvas-page__template-prompts" role="list">
+                      {prompts.map((prompt) => (
+                        <li key={prompt}>
+                          <button
+                            type="button"
+                            className="canvas-page__template-prompt-item"
+                            onClick={() => navigate('/canvas/open')}
+                          >
+                            {prompt}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </article>
               )
             })}

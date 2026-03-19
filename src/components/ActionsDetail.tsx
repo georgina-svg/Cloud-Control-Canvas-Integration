@@ -1,15 +1,38 @@
+import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   IconArrowUpRight,
   IconPlus,
   IconMic,
   IconWaveform,
+  IconSend,
   IconDotsThree,
   IconStatusNegative,
 } from './icons'
 import { Button } from './Button'
 
 const TAGS = ['Meraki', 'ThousandEyes', 'SD-WAN Manager', 'Splunk', 'Security Cloud Control']
+
+interface ChatMessage {
+  id: string
+  role: 'user' | 'assistant'
+  text: string
+}
+
+function generateReply(message: string): string {
+  const m = message.toLowerCase()
+  if (m.includes('rollback') || m.includes('revert'))
+    return 'Initiating rollback of policy "BranchOptimize-v2" to the previous stable version. This should restore latency to baseline within 2–3 minutes. I\'ll monitor the recovery and update you once client connectivity normalizes.'
+  if (m.includes('latency') || m.includes('slow') || m.includes('performance'))
+    return 'Current max latency in Singapore is 795 ms, up from a baseline of ~42 ms. The spike correlates directly with the BranchOptimize-v2 policy deployment at 11:02 today. Affected paths include the MPLS backup route across AP-Southeast-1.'
+  if (m.includes('client') || m.includes('user') || m.includes('impact'))
+    return '1,583 clients are currently affected across 4 Singapore branch sites. The heaviest impact is on VoIP and video conferencing traffic. Business-critical applications like Webex and Salesforce are showing elevated error rates.'
+  if (m.includes('cause') || m.includes('why') || m.includes('root'))
+    return 'Root cause: The BranchOptimize-v2 policy modified DiffServ markings for real-time traffic, inadvertently deprioritizing latency-sensitive flows. ThousandEyes confirmed the degradation started 3 minutes after the policy was pushed at 11:02 AM.'
+  if (m.includes('escalat') || m.includes('manager') || m.includes('ticket'))
+    return 'Escalation drafted to your incident manager (on-call: Priya Sharma). A ServiceNow ticket INC-204817 has been pre-populated with current telemetry. Shall I send it now?'
+  return 'Understood. Based on current telemetry from Meraki and ThousandEyes, the Singapore SD-WAN degradation is ongoing. The fastest path to resolution is rolling back "BranchOptimize-v2". Would you like me to proceed?'
+}
 
 export interface ActionsDetailProps {
   /** When true, hide the Open canvas button (e.g. when embedded on Open Canvas page) */
@@ -23,6 +46,30 @@ export interface ActionsDetailProps {
 }
 
 export function ActionsDetail({ hideOpenCanvas, compact, onAddMetricsToBoard, metricsOnBoard }: ActionsDetailProps = {}) {
+  const [inputValue, setInputValue] = useState('')
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [isTyping, setIsTyping] = useState(false)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const hasText = inputValue.trim().length > 0
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, isTyping])
+
+  const handleSend = () => {
+    const text = inputValue.trim()
+    if (!text) return
+    const userMsg: ChatMessage = { id: crypto.randomUUID(), role: 'user', text }
+    setMessages((prev) => [...prev, userMsg])
+    setInputValue('')
+    setIsTyping(true)
+    setTimeout(() => {
+      const reply: ChatMessage = { id: crypto.randomUUID(), role: 'assistant', text: generateReply(text) }
+      setMessages((prev) => [...prev, reply])
+      setIsTyping(false)
+    }, 1200)
+  }
+
   const scrollContent = (
     <>
       <header className="actions-detail__header">
@@ -121,7 +168,7 @@ export function ActionsDetail({ hideOpenCanvas, compact, onAddMetricsToBoard, me
       </section>
 
       <div className="actions-detail__actions">
-        <Button variant="primary" type="button">Rollback policy &apos;BranchOptimize-v2&apos;</Button>
+        <Button variant="secondary" type="button" className="ai-button--blue-border">Rollback policy &apos;BranchOptimize-v2&apos;</Button>
         <Button variant="secondary" type="button">Escalate to incident manager</Button>
         <Button variant="secondary" type="button">Show issues in Topology</Button>
       </div>
@@ -132,26 +179,66 @@ export function ActionsDetail({ hideOpenCanvas, compact, onAddMetricsToBoard, me
     <div className={`actions-detail${compact ? ' actions-detail--compact' : ''}`}>
       {compact ? <div className="actions-detail__scroll">{scrollContent}</div> : scrollContent}
 
+      {messages.length > 0 && (
+        <div className="actions-detail__messages">
+          {messages.map((msg) => (
+            <div key={msg.id} className={`actions-detail__bubble actions-detail__bubble--${msg.role}`}>
+              {msg.role === 'assistant' && (
+                <span className="actions-detail__bubble-avatar" aria-hidden>AI</span>
+              )}
+              <p className="actions-detail__bubble-text">{msg.text}</p>
+            </div>
+          ))}
+          {isTyping && (
+            <div className="actions-detail__bubble actions-detail__bubble--assistant">
+              <span className="actions-detail__bubble-avatar" aria-hidden>AI</span>
+              <div className="actions-detail__typing" aria-label="Assistant is typing">
+                <span /><span /><span />
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+      )}
+
       <div className="actions-detail__chat">
         <div className="ai-assistant__chat-field">
           <div className="ai-assistant__chat-field-inner">
-            <button type="button" className="ai-assistant__chat-field-btn" aria-label="Add attachment">
-              <IconPlus />
-            </button>
+            {!hasText && (
+              <button type="button" className="ai-assistant__chat-field-btn" aria-label="Add attachment">
+                <IconPlus />
+              </button>
+            )}
             <input
               type="text"
               className="ai-assistant__chat-placeholder"
               placeholder="Ask anything"
               aria-label="Ask anything"
               autoComplete="off"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
             />
           </div>
-          <button type="button" className="ai-assistant__chat-field-btn" aria-label="Voice input">
-            <IconMic />
-          </button>
-          <button type="button" className="ai-assistant__chat-field-btn ai-assistant__chat-field-btn--highlight" aria-label="Waveform">
-            <IconWaveform />
-          </button>
+          {hasText ? (
+            <button
+              type="button"
+              className="ai-assistant__chat-field-btn ai-assistant__chat-field-btn--highlight"
+              aria-label="Send message"
+              onClick={handleSend}
+            >
+              <IconSend />
+            </button>
+          ) : (
+            <>
+              <button type="button" className="ai-assistant__chat-field-btn" aria-label="Voice input">
+                <IconMic />
+              </button>
+              <button type="button" className="ai-assistant__chat-field-btn ai-assistant__chat-field-btn--highlight" aria-label="Waveform">
+                <IconWaveform />
+              </button>
+            </>
+          )}
         </div>
       </div>
 

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type React from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { Header } from './Header'
 import { ModeSwitcher } from './ModeSwitcher'
@@ -6,10 +7,13 @@ import { ModeSwitcher } from './ModeSwitcher'
 export type LayoutOutletContext = {
   chatPanelOpen: boolean
   setChatPanelOpen: (open: boolean) => void
+  threads: { id: string; title: string }[]
+  setThreads: React.Dispatch<React.SetStateAction<{ id: string; title: string }[]>>
 }
 
 export function Layout() {
   const [chatPanelOpen, setChatPanelOpen] = useState(true)
+  const [threads, setThreads] = useState<{ id: string; title: string }[]>([])
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -48,7 +52,7 @@ export function Layout() {
           overflow: 'visible',
         }}
       >
-        <Outlet context={{ chatPanelOpen, setChatPanelOpen } satisfies LayoutOutletContext} />
+        <Outlet context={{ chatPanelOpen, setChatPanelOpen, threads, setThreads } satisfies LayoutOutletContext} />
       </main>
     </div>
   )
