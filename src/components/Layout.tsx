@@ -4,16 +4,24 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { Header } from './Header'
 import { ModeSwitcher } from './ModeSwitcher'
 
+export type IntersightMessage = { id: string; role: 'user' | 'assistant'; text: string; time: string }
+
 export type LayoutOutletContext = {
   chatPanelOpen: boolean
   setChatPanelOpen: (open: boolean) => void
   threads: { id: string; title: string }[]
   setThreads: React.Dispatch<React.SetStateAction<{ id: string; title: string }[]>>
+  intersightMessages: IntersightMessage[]
+  setIntersightMessages: React.Dispatch<React.SetStateAction<IntersightMessage[]>>
+  intersightTyping: boolean
+  setIntersightTyping: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 export function Layout() {
   const [chatPanelOpen, setChatPanelOpen] = useState(true)
   const [threads, setThreads] = useState<{ id: string; title: string }[]>([])
+  const [intersightMessages, setIntersightMessages] = useState<IntersightMessage[]>([])
+  const [intersightTyping, setIntersightTyping] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -52,7 +60,7 @@ export function Layout() {
           overflow: 'visible',
         }}
       >
-        <Outlet context={{ chatPanelOpen, setChatPanelOpen, threads, setThreads } satisfies LayoutOutletContext} />
+        <Outlet context={{ chatPanelOpen, setChatPanelOpen, threads, setThreads, intersightMessages, setIntersightMessages, intersightTyping, setIntersightTyping } satisfies LayoutOutletContext} />
       </main>
     </div>
   )

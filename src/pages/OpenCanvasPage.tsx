@@ -1,13 +1,18 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import type { ReactNode } from 'react'
+import type React from 'react'
 import { useLocation, useOutletContext } from 'react-router-dom'
 import type { LayoutOutletContext } from '../components/Layout'
 import {
   IconNav, IconFile, IconPencil, IconStar, IconCaretDown, IconMic, IconWaveform,
-  IconHeartPulse, IconChart, IconSettings, IconDevice, IconShield, IconTopologyNodes, IconSend,
+  IconHeartPulse, IconChart, IconSettings, IconDevice, IconShield, IconTopologyNodes, IconSend, IconDotsThree,
+  IconUpload, IconStickyNote, IconMinus, IconPlus,
 } from '../components/icons'
+import { INTERSIGHT_PROMPT_CATEGORIES, IntersightPromptCat } from '../components/IntersightPromptCats'
 import { ChatPanel } from '../components/ChatPanel'
 import { ActionsDetail } from '../components/ActionsDetail'
+import { ChatVisual } from '../components/ChatVisual'
+import type { VisualType } from '../components/ChatVisual'
 
 const BOARD_SIZE = 4000
 const ZOOM_MIN = 0.25
@@ -43,14 +48,6 @@ const INITIAL_BOARD_CARD_POSITIONS: Record<BoardCardId, { x: number; y: number }
   'entities':        { x: 0, y: 556 },
 }
 
-const CANVAS_PROMPT_CATEGORIES: Array<{ id: string; label: string; icon: ReactNode }> = [
-  { id: 'health',         label: 'Health & Overview',       icon: <IconHeartPulse /> },
-  { id: 'performance',    label: 'Performance & Trends',    icon: <IconChart /> },
-  { id: 'troubleshoot',   label: 'Troubleshooting',         icon: <IconSettings /> },
-  { id: 'devices',        label: 'Devices & Inventory',     icon: <IconDevice /> },
-  { id: 'security',       label: 'Security & Access',       icon: <IconShield /> },
-  { id: 'visualization',  label: 'Visualization & Topology',icon: <IconTopologyNodes /> },
-]
 
 const BOARD_TEMPLATES: Array<{
   id: string
@@ -63,7 +60,7 @@ const BOARD_TEMPLATES: Array<{
   {
     id: 'tmpl-health',
     title: 'Health & Overview',
-    description: 'Get a unified view of network health, alerts, and system status across your infrastructure.',
+    description: 'Show me my network health, active alerts, and critical issues across my infrastructure.',
     color: 'canvas-card--blue',
     icon: <IconHeartPulse />,
     prompts: [
@@ -78,7 +75,7 @@ const BOARD_TEMPLATES: Array<{
   {
     id: 'tmpl-troubleshoot',
     title: 'Troubleshooting',
-    description: 'Diagnose and resolve issues fast with guided root cause analysis and remediation steps.',
+    description: 'Help me diagnose this issue, find the root cause, and walk me through how to fix it.',
     color: 'canvas-card--orange',
     icon: <IconSettings />,
     prompts: [],
@@ -86,7 +83,7 @@ const BOARD_TEMPLATES: Array<{
   {
     id: 'tmpl-performance',
     title: 'Performance & Trends',
-    description: 'Analyze performance metrics and spot trends to proactively prevent degradation.',
+    description: 'Show me performance trends, latency spikes, and where my network is degrading over time.',
     color: 'canvas-card--pink',
     icon: <IconChart />,
     prompts: [],
@@ -94,7 +91,7 @@ const BOARD_TEMPLATES: Array<{
   {
     id: 'tmpl-devices',
     title: 'Devices & Inventory',
-    description: 'Explore device inventory, configurations, and connectivity across your network.',
+    description: 'Show me all my devices, their current status, configurations, and connectivity issues.',
     color: 'canvas-card--green',
     icon: <IconDevice />,
     prompts: [],
@@ -102,7 +99,7 @@ const BOARD_TEMPLATES: Array<{
   {
     id: 'tmpl-security',
     title: 'Security & Access',
-    description: 'Review access policies, detect anomalies, and strengthen your security posture.',
+    description: 'Show me security anomalies, policy violations, and what I should do to strengthen my posture.',
     color: 'canvas-card--purple',
     icon: <IconShield />,
     prompts: [],
@@ -110,7 +107,7 @@ const BOARD_TEMPLATES: Array<{
   {
     id: 'tmpl-visualization',
     title: 'Visualization & Topology',
-    description: 'Map and visualize your network topology for clearer situational awareness.',
+    description: 'Show me a map of my network topology and highlight any connectivity gaps or anomalies.',
     color: 'canvas-card--teal',
     icon: <IconTopologyNodes />,
     prompts: [],
@@ -142,28 +139,59 @@ const INITIAL_TEMPLATE_POSITIONS: Record<string, { x: number; y: number }> = {
   'tmpl-visualization':  { x: COL2_X,  y: ROW3_Y },
 }
 
-function CanvasPromptCat({ label, icon }: { label: string; icon: ReactNode }) {
-  const [open, setOpen] = useState(false)
-  return (
-    <div className={`canvas-prompt-cat${open ? ' canvas-prompt-cat--open' : ''}`}>
-      <button
-        type="button"
-        className="canvas-prompt-cat__btn"
-        aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
-      >
-        <span className="canvas-prompt-cat__icon" aria-hidden>{icon}</span>
-        <span className="canvas-prompt-cat__label">{label}</span>
-        <IconCaretDown className="canvas-prompt-cat__chevron" />
-      </button>
-      {open && <div className="canvas-prompt-cat__body" />}
-    </div>
-  )
+
+function getVisualForPrompt(m: string): VisualType | undefined {
+  if (m.includes('health') || m.includes('overview') || m.includes('doing') || m.includes('status'))
+    return 'health-overview'
+  if (m.includes('down') || (m.includes('site') && !m.includes('health')))
+    return 'site-status'
+  if (m.includes('alert') || m.includes('critical'))
+    return 'alerts-list'
+  if (m.includes('trend') || m.includes('performance') || m.includes('latency'))
+    return 'perf-trend'
+  if (m.includes('device') || m.includes('inventory'))
+    return 'device-summary'
+  return undefined
 }
 
-export function OpenCanvasPage() {
+function generateCanvasName(prompt: string): string {
+  const m = prompt.toLowerCase()
+  if (m.includes('health') || m.includes('overview') || m.includes('doing') || m.includes('status'))
+    return 'Network Health Overview'
+  if (m.includes('site') && (m.includes('down') || m.includes('offline')))
+    return 'Site Availability Check'
+  if (m.includes('alert') || m.includes('critical'))
+    return 'Critical Alerts Review'
+  if (m.includes('health trend') || m.includes('trend') || m.includes('past') || m.includes('days'))
+    return 'Health Trends Analysis'
+  if (m.includes('health score') || m.includes('score below'))
+    return 'Health Score Audit'
+  if (m.includes('latency') || m.includes('performance') || m.includes('slow'))
+    return 'Performance Investigation'
+  if (m.includes('device') || m.includes('inventory'))
+    return 'Device Inventory Review'
+  if (m.includes('security') || m.includes('access') || m.includes('policy'))
+    return 'Security & Access Audit'
+  if (m.includes('topology') || m.includes('map') || m.includes('visual'))
+    return 'Topology Visualization'
+  if (m.includes('troubleshoot') || m.includes('issue') || m.includes('problem') || m.includes('root cause'))
+    return 'Troubleshooting Session'
+  if (m.includes('wireless') || m.includes('wifi') || m.includes('wi-fi'))
+    return 'Wireless Performance Review'
+  if (m.includes('wan') || m.includes('sd-wan'))
+    return 'SD-WAN Analysis'
+  if (m.includes('wrong') || m.includes('what happened'))
+    return 'Incident Investigation'
+  // Fallback: use first 40 chars of prompt
+  const trimmed = prompt.trim()
+  return trimmed.length > 40 ? trimmed.slice(0, 39) + '…' : trimmed
+}
+
+export function OpenCanvasPage({ closingCanvas, canvasWidth, onCanvasWidthChange }: { closingCanvas?: boolean; canvasWidth?: number | null; onCanvasWidthChange?: (w: number) => void } = {}) {
   const { pathname, state: routeState } = useLocation()
-  const { threads } = useOutletContext<LayoutOutletContext>()
+  const { threads, setThreads, intersightMessages, setIntersightMessages, intersightTyping, setIntersightTyping } = useOutletContext<LayoutOutletContext>()
+  const actionsMessages = (routeState as null | { actionsMessages?: { id: string; role: 'user' | 'assistant'; text: string }[] })?.actionsMessages
+  const initialPrompt = (routeState as null | { initialPrompt?: string })?.initialPrompt ?? ''
   const canvasContext = (routeState as null | {
     breadcrumb: string[]; title: string; severity: string; triggered: string; affectedClients: number
   }) ?? {
@@ -174,14 +202,43 @@ export function OpenCanvasPage() {
     affectedClients: 1247,
   }
   const isIntersightCanvas = pathname.startsWith('/intersight')
-  const showWelcome = isIntersightCanvas || pathname === '/canvas/open'
+  const fromActions = actionsMessages !== undefined
+  const showWelcome = (isIntersightCanvas || pathname === '/canvas/open') && !fromActions
   const showContextBar = isIntersightCanvas
+  const [intersightThreadId] = useState(() => 'intersight-untitled')
+  const [intersightThreadTitle] = useState(() => {
+    const now = new Date()
+    const hh = now.getHours().toString().padStart(2, '0')
+    const mm = now.getMinutes().toString().padStart(2, '0')
+    const mo = (now.getMonth() + 1).toString().padStart(2, '0')
+    const dd = now.getDate().toString().padStart(2, '0')
+    return `${hh}:${mm} ${mo}/${dd} canvas`
+  })
+  const [canvasThreadId] = useState(() => crypto.randomUUID())
+  const [canvasThreadTitle] = useState(() => {
+    if (initialPrompt) return generateCanvasName(initialPrompt)
+    const now = new Date()
+    const hh = now.getHours().toString().padStart(2, '0')
+    const mm = now.getMinutes().toString().padStart(2, '0')
+    const mo = (now.getMonth() + 1).toString().padStart(2, '0')
+    const dd = now.getDate().toString().padStart(2, '0')
+    return `${hh}:${mm} ${mo}/${dd} canvas`
+  })
   const [threadsPanelOpen, setThreadsPanelOpen] = useState(false)
   const [chatFullPage, setChatFullPage] = useState(false)
   const [selectedBoardCategory, setSelectedBoardCategory] = useState<string | null>(null)
-  const [chatInput, setChatInput] = useState('')
-  const [canvasMessages, setCanvasMessages] = useState<{ id: string; role: 'user' | 'assistant'; text: string; time: string }[]>([])
-  const [canvasTyping, setCanvasTyping] = useState(false)
+  const [boardTemplatesHidden, setBoardTemplatesHidden] = useState(false)
+  const [tmplGroupLeft, setTmplGroupLeft] = useState(600)
+  const [categoriesModalOpen, setCategoriesModalOpen] = useState(() => !fromActions && !initialPrompt)
+  const [chatInput, setChatInput] = useState(() => initialPrompt)
+  const [localCanvasMessages, setLocalCanvasMessages] = useState<{ id: string; role: 'user' | 'assistant'; text: string; time: string; visual?: VisualType }[]>([])
+  const [localCanvasTyping, setLocalCanvasTyping] = useState(false)
+  const canvasMessages = isIntersightCanvas ? intersightMessages : localCanvasMessages
+  const setCanvasMessages = isIntersightCanvas
+    ? (setIntersightMessages as React.Dispatch<React.SetStateAction<{ id: string; role: 'user' | 'assistant'; text: string; time: string; visual?: VisualType }[]>>)
+    : setLocalCanvasMessages
+  const canvasTyping = isIntersightCanvas ? intersightTyping : localCanvasTyping
+  const setCanvasTyping = isIntersightCanvas ? setIntersightTyping : setLocalCanvasTyping
   const canvasMsgsEndRef = useRef<HTMLDivElement>(null)
   const [metricsOnBoard, setMetricsOnBoard] = useState(false)
   const [zoom, setZoom] = useState(1)
@@ -192,6 +249,14 @@ export function OpenCanvasPage() {
   const [assistantWidth, setAssistantWidth] = useState(440)
   const [isResizingAssistant, setIsResizingAssistant] = useState(false)
   const [boardCardPositions, setBoardCardPositions] = useState<Record<string, { x: number; y: number }>>(() => ({ ...INITIAL_BOARD_CARD_POSITIONS, ...INITIAL_TEMPLATE_POSITIONS }))
+  const [boardVisuals, setBoardVisuals] = useState<Array<{ id: string; type: VisualType; x: number; y: number; groupId?: string }>>([])
+  const [boardGroups, setBoardGroups] = useState<Array<{ id: string; tmplId: string; title: string; x: number; y: number; w: number; h: number }>>([])
+  const addVisualToBoard = useCallback((type: VisualType) => {
+    const id = `visual-${crypto.randomUUID()}`
+    const offset = boardVisuals.length * 32
+    setBoardVisuals((prev) => [...prev, { id, type, x: 80 + offset, y: 80 + offset }])
+    setBoardCardPositions((prev) => ({ ...prev, [id]: { x: 80 + offset, y: 80 + offset } }))
+  }, [boardVisuals.length])
   const resizeStart = useRef({ clientX: 0, width: 0 })
   const panStart = useRef({ x: 0, y: 0, panX: 0, panY: 0 })
   const dragStart = useRef({ clientX: 0, clientY: 0, noteX: 0, noteY: 0, noteId: '' })
@@ -207,6 +272,135 @@ export function OpenCanvasPage() {
   useEffect(() => {
     canvasMsgsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [canvasMessages, canvasTyping])
+
+  useEffect(() => {
+    if (!isIntersightCanvas) return
+    setThreads((prev) => {
+      if (prev.some((t) => t.id === intersightThreadId)) return prev
+      return [{ id: intersightThreadId, title: intersightThreadTitle }, ...prev]
+    })
+  }, [isIntersightCanvas, intersightThreadId, intersightThreadTitle, setThreads])
+
+  useEffect(() => {
+    if (isIntersightCanvas || (!selectedBoardCategory && !initialPrompt)) return
+    setThreads((prev) => {
+      if (prev.some((t) => t.id === canvasThreadId)) return prev
+      return [{ id: canvasThreadId, title: canvasThreadTitle }, ...prev]
+    })
+  }, [isIntersightCanvas, selectedBoardCategory, initialPrompt, canvasThreadId, canvasThreadTitle, setThreads])
+
+  const VISUAL_TITLES: Record<VisualType, string> = {
+    'health-overview': 'Health Overview',
+    'site-status':     'Site Status',
+    'alerts-list':     'Active Alerts',
+    'perf-trend':      'Performance Trend',
+    'device-summary':  'Device Summary',
+  }
+
+  const CATEGORY_VISUALS: Record<string, VisualType[]> = {
+    'tmpl-health':         ['health-overview', 'alerts-list', 'site-status'],
+    'tmpl-troubleshoot':   ['alerts-list', 'perf-trend', 'site-status'],
+    'tmpl-performance':    ['perf-trend', 'health-overview', 'device-summary'],
+    'tmpl-devices':        ['device-summary', 'site-status', 'health-overview'],
+    'tmpl-security':       ['alerts-list', 'device-summary', 'health-overview'],
+    'tmpl-visualization':  ['site-status', 'health-overview', 'perf-trend'],
+  }
+
+  const CATEGORY_REPLIES: Record<string, string> = {
+    'tmpl-health':        "I've added a Health Overview, Active Alerts, and Site Status to the board. Your overall network health is at 87% with 3 critical alerts active across your Singapore and Sydney sites.",
+    'tmpl-troubleshoot':  "I've pulled up Active Alerts, Performance Trends, and Site Status on the board to help you diagnose the issue. Looks like latency spiked 42% in APAC — want me to trace the root cause?",
+    'tmpl-performance':   "I've added Performance Trends, Health Overview, and Device Summary to the board. Latency in APAC has increased 42% over the past 14 days — the Singapore region is the primary outlier.",
+    'tmpl-devices':       "I've added Device Summary, Site Status, and Health Overview to the board. You have 4,821 managed devices across 38 sites — 47 are currently offline with 112 pending firmware updates.",
+    'tmpl-security':      "I've added Active Alerts, Device Summary, and Health Overview to the board. No active incidents, but 3 policy changes were made in the last 24 hours — BranchOptimize-v2 is flagged for review.",
+    'tmpl-visualization': "I've added Site Status, Health Overview, and Performance Trends to the board to give you a full picture of your network topology and any connectivity gaps.",
+  }
+
+  const handleCategorySelect = useCallback((tmplId: string) => {
+    const VISUAL_W = 320
+    const VISUAL_H = 270
+    const VISUAL_GAP_X = 20
+    const GROUP_PAD = 20
+    const GROUP_HEADER_H = 32
+
+    const visuals = CATEGORY_VISUALS[tmplId] ?? []
+    const tmpl = BOARD_TEMPLATES.find((t) => t.id === tmplId)
+
+    setSelectedBoardCategory(tmplId)
+    setBoardTemplatesHidden(true)
+
+    // If cards for this template already exist, just pan to that section
+    const existingGroup = boardGroups.find((g) => g.tmplId === tmplId)
+    if (existingGroup) {
+      const sectionCenterX = existingGroup.x + existingGroup.w / 2
+      const sectionCenterY = existingGroup.y + existingGroup.h / 2
+      const viewport = canvasAreaRef.current
+      if (viewport) {
+        setZoom(1)
+        setPan({ x: viewport.clientWidth / 2 - sectionCenterX, y: viewport.clientHeight / 2 - sectionCenterY })
+      }
+      return
+    }
+
+    // Grid layout: 3 columns, then wrap to next row
+    const COLS = 2
+    const COL_W = 1100  // column slot width (group ~1040 + gap ~60)
+    const ROW_H = 380   // row slot height (group ~312 + gap ~68)
+
+    const groupIndex = boardGroups.length
+    const col = groupIndex % COLS
+    const row = Math.floor(groupIndex / COLS)
+    const xOffset = col * COL_W
+    const yOffset = row * ROW_H
+
+    const groupW = visuals.length * (VISUAL_W + VISUAL_GAP_X) - VISUAL_GAP_X + GROUP_PAD * 2
+    const groupId = `group-${crypto.randomUUID()}`
+
+    const newVisuals = visuals.map((type, i) => ({
+      id: `visual-${crypto.randomUUID()}`,
+      type,
+      x: xOffset + i * (VISUAL_W + VISUAL_GAP_X),
+      y: yOffset,
+      groupId,
+    }))
+
+    setBoardGroups((g) => [...g, {
+      id: groupId,
+      tmplId,
+      title: tmpl?.title ?? '',
+      x: xOffset - GROUP_PAD,
+      y: yOffset - GROUP_HEADER_H - GROUP_PAD,
+      w: groupW,
+      h: VISUAL_H + GROUP_HEADER_H + GROUP_PAD * 2,
+    }])
+
+    setBoardCardPositions((pos) => {
+      const next = { ...pos }
+      newVisuals.forEach((v) => { next[v.id] = { x: v.x, y: v.y } })
+      return next
+    })
+
+    setBoardVisuals((prev) => [...prev, ...newVisuals])
+
+    // Pan to center the new section at 100% zoom
+    const sectionCenterX = xOffset + (visuals.length * (VISUAL_W + VISUAL_GAP_X) - VISUAL_GAP_X) / 2
+    const sectionCenterY = yOffset + VISUAL_H / 2
+    const viewport = canvasAreaRef.current
+    if (viewport) {
+      setZoom(1)
+      setPan({ x: viewport.clientWidth / 2 - sectionCenterX, y: viewport.clientHeight / 2 - sectionCenterY })
+    }
+
+    const now = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+    setCanvasMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'user', text: tmpl?.description ?? tmpl?.title ?? '', time: now }])
+    setCanvasTyping(true)
+    setTimeout(() => {
+      const replyTime = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+      const reply = CATEGORY_REPLIES[tmplId] ?? "I've added the relevant visuals to the board for you."
+      setCanvasMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'assistant', text: reply, time: replyTime }])
+      setCanvasTyping(false)
+    }, 1200)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [boardGroups])
 
   const handleCanvasSend = useCallback(() => {
     const text = chatInput.trim()
@@ -233,10 +427,46 @@ export function OpenCanvasPage() {
       else if (m.includes('topology') || m.includes('map') || m.includes('visual'))
         reply = 'I can generate a topology map for any site or region. Which would you like to visualize — the full network, a specific region, or the affected Singapore branch?'
       const replyTime = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-      setCanvasMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'assistant', text: reply, time: replyTime }])
+      const visual = getVisualForPrompt(m)
+      setCanvasMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'assistant', text: reply, time: replyTime, visual }])
       setCanvasTyping(false)
     }, 1200)
   }, [chatInput])
+
+  /* Auto-send initial prompt when navigating from Canvas page */
+  useEffect(() => {
+    if (!initialPrompt) return
+    const text = initialPrompt.trim()
+    if (!text) return
+    const now = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+    setCanvasMessages([{ id: crypto.randomUUID(), role: 'user', text, time: now }])
+    setChatInput('')
+    setCanvasTyping(true)
+    const timer = setTimeout(() => {
+      const m = text.toLowerCase()
+      let reply = 'Got it. I\'m analyzing your network data now. Could you give me a bit more context about what you\'re looking for?'
+      if (m.includes('health') || m.includes('overview') || m.includes('status') || m.includes('doing'))
+        reply = 'Overall network health is at 87%. There are 3 critical alerts active across your Singapore and Sydney sites, and 12 sites with health scores below 80%. Would you like a breakdown by region?'
+      else if (m.includes('down') || m.includes('site'))
+        reply = '2 sites are currently unreachable: SG-Branch-07 and SY-Branch-03. Both went offline in the last 30 minutes. The likely cause is the BranchOptimize-v2 SD-WAN policy change. Shall I investigate further?'
+      else if (m.includes('alert') || m.includes('critical'))
+        reply = 'There are 3 critical alerts right now: (1) Network latency spike in Singapore, (2) VPN tunnel down at SG-Branch-07, (3) High packet loss on MPLS link AP-Southeast-1. Do you want me to prioritize one?'
+      else if (m.includes('trend') || m.includes('performance') || m.includes('latency'))
+        reply = 'Over the past 14 days, latency in APAC has increased by 42% since the policy change on Monday. Throughput is stable in NA and EMEA. The Singapore region is the primary outlier — max latency peaked at 795 ms today.'
+      else if (m.includes('device') || m.includes('inventory'))
+        reply = 'You have 4,821 managed devices across 38 sites. 47 devices are offline, 112 have pending firmware updates. The highest-risk devices are 6 Meraki MX appliances running firmware older than 3 versions.'
+      else if (m.includes('security') || m.includes('access') || m.includes('policy'))
+        reply = 'No active security incidents detected. However, 3 access policy changes were made in the last 24 hours — 2 by admin@cisco.com and 1 by auto-remediation. BranchOptimize-v2 is flagged for review.'
+      else if (m.includes('topology') || m.includes('map') || m.includes('visual'))
+        reply = 'I can generate a topology map for any site or region. Which would you like to visualize — the full network, a specific region, or the affected Singapore branch?'
+      const replyTime = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+      const visual = getVisualForPrompt(m)
+      setCanvasMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'assistant', text: reply, time: replyTime, visual }])
+      setCanvasTyping(false)
+    }, 1200)
+    return () => clearTimeout(timer)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   /* Pan to position board content in the viewport when the canvas is shown */
   useEffect(() => {
@@ -250,10 +480,13 @@ export function OpenCanvasPage() {
       const cw = content.offsetWidth
       const ch = content.offsetHeight
       if (!isIntersightCanvas && pathname === '/canvas/open') {
-        // Center the template group section in the viewport
-        const groupCenterX = GROUP_X + GROUP_W / 2
-        const groupCenterY = GROUP_Y + GROUP_H / 2
-        setPan({ x: vw / 2 - groupCenterX, y: vh / 2 - groupCenterY })
+        // Position the template group: right-aligned with padding, near the top
+        const groupVisualW = GROUP_W * 0.5  // 374px at scale(0.5)
+        const rightPad = 48
+        const panX = 80
+        const newTmplLeft = Math.round(vw - rightPad - groupVisualW - panX)
+        setTmplGroupLeft(newTmplLeft)
+        setPan({ x: panX, y: 80 })
       } else if (showWelcome) {
         // Empty board: center it
         setPan({ x: vw / 2 - cw / 2, y: vh / 2 - ch / 2 })
@@ -399,6 +632,30 @@ export function OpenCanvasPage() {
     window.addEventListener('mouseup', handleResizeAssistantEnd)
   }, [assistantWidth, handleResizeAssistantMove, handleResizeAssistantEnd])
 
+  const canvasEdgeDragRef = useRef<{ startX: number; startWidth: number } | null>(null)
+
+  const handleCanvasEdgeDragStart = useCallback((e: React.MouseEvent) => {
+    if (!isIntersightCanvas || !onCanvasWidthChange) return
+    if (e.button !== 0) return
+    e.preventDefault()
+    const startWidth = canvasWidth ?? window.innerWidth * 0.75
+    canvasEdgeDragRef.current = { startX: e.clientX, startWidth }
+
+    const onMove = (ev: MouseEvent) => {
+      if (!canvasEdgeDragRef.current) return
+      const delta = canvasEdgeDragRef.current.startX - ev.clientX
+      const newWidth = Math.min(window.innerWidth, Math.max(window.innerWidth * 0.5, canvasEdgeDragRef.current.startWidth + delta))
+      onCanvasWidthChange(newWidth)
+    }
+    const onUp = () => {
+      canvasEdgeDragRef.current = null
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }, [isIntersightCanvas, canvasWidth, onCanvasWidthChange])
+
   const zoomIn = useCallback(() => setZoom((z) => Math.min(ZOOM_MAX, z + ZOOM_STEP)), [])
   const zoomOut = useCallback(() => setZoom((z) => Math.max(ZOOM_MIN, z - ZOOM_STEP)), [])
   const zoomReset = useCallback(() => {
@@ -417,12 +674,21 @@ export function OpenCanvasPage() {
 
   return (
     <div
-      className={`ai-assistant ai-assistant--open-canvas${chatFullPage ? ' ai-assistant--open-canvas--chat-full' : ''}`}
+      className={`ai-assistant ai-assistant--open-canvas${chatFullPage ? ' ai-assistant--open-canvas--chat-full' : ''}${closingCanvas ? ' ai-assistant--open-canvas--closing' : ''}`}
       role="main"
+      style={isIntersightCanvas ? { position: 'fixed', top: 56, right: 0, width: canvasWidth != null ? canvasWidth : '75vw', height: 'calc(100vh - 56px)', zIndex: 9 } : undefined}
     >
       <div className="ai-assistant__bg" aria-hidden />
       <div className="ai-assistant__bg-glow" aria-hidden />
       <div className="ai-assistant__bg-glow-overlay" aria-hidden />
+
+      {isIntersightCanvas && (
+        <div
+          className="open-canvas__edge-drag-handle"
+          aria-hidden
+          onMouseDown={handleCanvasEdgeDragStart}
+        />
+      )}
 
       {threadsPanelOpen && (
         <>
@@ -431,7 +697,7 @@ export function OpenCanvasPage() {
             onClick={() => setThreadsPanelOpen(false)}
             aria-hidden
           />
-          <ChatPanel overlay onClose={() => setThreadsPanelOpen(false)} injectedThreads={threads} highlightThreadId={isIntersightCanvas ? '1' : undefined} />
+          <ChatPanel overlay onClose={() => setThreadsPanelOpen(false)} injectedThreads={threads} highlightThreadId={isIntersightCanvas ? intersightThreadId : (selectedBoardCategory || initialPrompt) ? canvasThreadId : undefined} />
         </>
       )}
 
@@ -446,36 +712,21 @@ export function OpenCanvasPage() {
           >
             <IconNav />
           </button>
-          <button
-            type="button"
-            className="open-canvas__close-canvas-btn"
-            onClick={() => setChatFullPage((prev) => !prev)}
-          >
-            {chatFullPage ? 'Open canvas' : 'Close canvas'}
-          </button>
+          {!isIntersightCanvas && (
+            <button
+              type="button"
+              className="open-canvas__close-canvas-btn"
+              onClick={() => setChatFullPage((prev) => !prev)}
+            >
+              {chatFullPage ? 'Open canvas' : 'Close canvas'}
+            </button>
+          )}
         </header>
         <div className="open-canvas__assistant-body">
           {showWelcome ? (
             <>
               <div className="canvas-welcome">
-                {selectedBoardCategory ? (() => {
-                  const cat = BOARD_TEMPLATES.find((t) => t.id === selectedBoardCategory)!
-                  return (
-                    <div className="canvas-welcome__cat-detail">
-                      <h2 className="canvas-welcome__heading">{cat.title}</h2>
-                      <p className="canvas-welcome__desc">{cat.description}</p>
-                      {cat.prompts.length > 0 && (
-                        <ul className="canvas-welcome__prompt-list" role="list">
-                          {cat.prompts.map((p) => (
-                            <li key={p}>
-                              <button type="button" className="canvas-welcome__prompt-item" onClick={() => setChatInput(p)}>{p}</button>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  )
-                })() : (
+                {!selectedBoardCategory && (
                   <>
                     <div className="canvas-welcome__hero">
                       <h2 className="canvas-welcome__heading">Where should we begin?</h2>
@@ -483,8 +734,8 @@ export function OpenCanvasPage() {
                     </div>
                     {isIntersightCanvas && (
                       <div className="canvas-welcome__cats">
-                        {CANVAS_PROMPT_CATEGORIES.map((cat) => (
-                          <CanvasPromptCat key={cat.id} label={cat.label} icon={cat.icon} />
+                        {INTERSIGHT_PROMPT_CATEGORIES.map((cat) => (
+                          <IntersightPromptCat key={cat.id} label={cat.label} icon={cat.icon} />
                         ))}
                       </div>
                     )}
@@ -510,6 +761,7 @@ export function OpenCanvasPage() {
                         )}
                       </div>
                       <p className="canvas-chat-msg__text">{msg.text}</p>
+                      {msg.visual && <ChatVisual type={msg.visual} onAddToBoard={() => addVisualToBoard(msg.visual!)} />}
                     </div>
                   ))}
                   {canvasTyping && (
@@ -528,12 +780,23 @@ export function OpenCanvasPage() {
               )}
             </>
           ) : (
-            <ActionsDetail hideOpenCanvas compact onAddMetricsToBoard={() => setMetricsOnBoard(true)} metricsOnBoard={metricsOnBoard} />
+            <ActionsDetail hideOpenCanvas compact onAddMetricsToBoard={() => setMetricsOnBoard(true)} metricsOnBoard={metricsOnBoard} initialMessages={actionsMessages} />
           )}
         </div>
         {showWelcome && (
           <footer className="open-canvas__chat-footer">
             <div className="open-canvas__input-wrap">
+              {!categoriesModalOpen && (
+                <div className="open-canvas__shortcuts-row">
+                  <button
+                    type="button"
+                    className="open-canvas__shortcut-chip"
+                    onClick={() => { setBoardTemplatesHidden(false); setSelectedBoardCategory(null) }}
+                  >
+                    Show all prompts
+                  </button>
+                </div>
+              )}
               <div className="open-canvas__input-field">
                 <input
                   type="text"
@@ -589,44 +852,35 @@ export function OpenCanvasPage() {
           aria-label="Canvas board"
         >
           <div className="open-canvas__board-actions">
-            <span className="open-canvas__toolbar-avatar" aria-hidden>A</span>
-            <button type="button" className="open-canvas__toolbar-btn open-canvas__toolbar-btn--outline" aria-label="Generate summary">
-              <IconStar className="open-canvas__toolbar-btn-icon" />
-              Generate summary
-            </button>
-            <button type="button" className="open-canvas__toolbar-btn open-canvas__toolbar-btn--outline" aria-label="View activity">
-              View activity
-            </button>
-            <button type="button" className="open-canvas__toolbar-btn open-canvas__toolbar-btn--primary" aria-label="Share" aria-haspopup="true">
-              Share
-              <IconCaretDown className="open-canvas__toolbar-btn-caret" aria-hidden />
+            {(isIntersightCanvas || selectedBoardCategory || initialPrompt) && (
+              <span className="open-canvas__board-title">
+                {isIntersightCanvas
+                  ? (threads.find((t) => t.id === intersightThreadId)?.title ?? intersightThreadTitle)
+                  : (threads.find((t) => t.id === canvasThreadId)?.title ?? canvasThreadTitle)}
+              </span>
+            )}
+            <div className="open-canvas__toolbar-avatars" aria-hidden>
+              <span className="open-canvas__toolbar-avatar open-canvas__toolbar-avatar--a">A</span>
+              <span className="open-canvas__toolbar-avatar open-canvas__toolbar-avatar--b">B</span>
+              <span className="open-canvas__toolbar-avatar open-canvas__toolbar-avatar--overflow">+2</span>
+            </div>
+            <div className="open-canvas__toolbar-btn-group">
+              <button type="button" className="open-canvas__toolbar-btn open-canvas__toolbar-btn--outline" aria-label="Generate summary">
+                <IconStar className="open-canvas__toolbar-btn-icon" />
+                Generate summary
+              </button>
+              <button type="button" className="open-canvas__toolbar-btn open-canvas__toolbar-btn--outline" aria-label="View activity">
+                View activity
+              </button>
+              <button type="button" className="open-canvas__toolbar-btn open-canvas__toolbar-btn--primary" aria-label="Share" aria-haspopup="true">
+                Share
+                <IconCaretDown className="open-canvas__toolbar-btn-caret" aria-hidden />
+              </button>
+            </div>
+            <button type="button" className="open-canvas__toolbar-dots" aria-label="More options">
+              <IconDotsThree />
             </button>
           </div>
-          {showContextBar && (
-            <div className="open-canvas__context-bar" aria-label="Canvas context from Intersight">
-              <nav className="open-canvas__context-breadcrumb" aria-label="Source path">
-                {canvasContext.breadcrumb.map((crumb, i) => (
-                  <span key={crumb} className="open-canvas__context-crumb">
-                    {i > 0 && <span className="open-canvas__context-sep" aria-hidden>/</span>}
-                    {crumb}
-                  </span>
-                ))}
-              </nav>
-              <div className="open-canvas__context-title-row">
-                <span className="open-canvas__context-severity open-canvas__context-severity--critical">
-                  {canvasContext.severity}
-                </span>
-                <span className="open-canvas__context-title">{canvasContext.title}</span>
-              </div>
-              <div className="open-canvas__context-meta">
-                <span className="open-canvas__context-meta-item">
-                  {canvasContext.affectedClients.toLocaleString()} affected clients
-                </span>
-                <span className="open-canvas__context-dot" aria-hidden />
-                <span className="open-canvas__context-meta-item">{canvasContext.triggered}</span>
-              </div>
-            </div>
-          )}
           <div
             className="open-canvas__board-surface"
             style={{
@@ -682,33 +936,59 @@ export function OpenCanvasPage() {
             </div>
             <div className="open-canvas__board-content" ref={boardContentRef}>
               <div className="open-canvas__cards">
-                {!isIntersightCanvas && (
+                {boardGroups.map((grp) => (
                   <div
-                    className="canvas-board-group"
-                    style={{ left: GROUP_X, top: GROUP_Y, width: GROUP_W, height: GROUP_H }}
-                    aria-hidden
+                    key={grp.id}
+                    className="canvas-board-group canvas-board-group--labeled"
+                    style={{ left: grp.x, top: grp.y, width: grp.w, height: grp.h }}
                   >
-                    <span className="canvas-board-group__header">Prompt categories</span>
+                    <span className="canvas-board-group__header">{grp.title}</span>
+                    <button
+                      type="button"
+                      className="canvas-board-group__delete"
+                      aria-label={`Delete ${grp.title} section`}
+                      onClick={() => {
+                        setBoardGroups((g) => g.filter((x) => x.id !== grp.id))
+                        setBoardVisuals((v) => v.filter((x) => x.groupId !== grp.id))
+                      }}
+                    >✕</button>
                   </div>
-                )}
-                {!isIntersightCanvas && BOARD_TEMPLATES.map((tmpl) => (
+                ))}
+                {boardVisuals.map((bv) => (
                   <div
-                    key={tmpl.id}
-                    className="open-canvas__board-card-draggable"
-                    style={{ left: getBoardCardPosition(tmpl.id).x, top: getBoardCardPosition(tmpl.id).y, width: CARD_W }}
+                    key={bv.id}
+                    className="open-canvas__board-card-draggable open-canvas__board-visual-card"
+                    style={{ left: getBoardCardPosition(bv.id).x, top: getBoardCardPosition(bv.id).y, width: 320 }}
                   >
-                    <div className="open-canvas__board-card-drag-handle" onMouseDown={(e) => handleBoardCardDragStart(e, tmpl.id)} aria-hidden />
-                    <div
-                      className={`canvas-page__template-card ${tmpl.color}${selectedBoardCategory === tmpl.id ? ' canvas-page__template-card--expanded' : ''}`}
-                      style={{ width: CARD_W, cursor: 'pointer' }}
-                      onClick={() => setSelectedBoardCategory(tmpl.id)}
+                    <div className="open-canvas__board-card-drag-handle" onMouseDown={(e) => handleBoardCardDragStart(e, bv.id)} aria-hidden />
+                    <div className="open-canvas__board-card-title">{VISUAL_TITLES[bv.type]}</div>
+                    <button
+                      type="button"
+                      className="open-canvas__board-card-delete"
+                      aria-label="Delete card"
+                      onClick={() => {
+                        const VISUAL_W = 320
+                        const GROUP_PAD = 20
+                        const remainingInGroup = boardVisuals.filter((v) => v.id !== bv.id && v.groupId === bv.groupId)
+                        setBoardVisuals((prev) => prev.filter((v) => v.id !== bv.id))
+                        if (bv.groupId) {
+                          if (remainingInGroup.length === 0) {
+                            setBoardGroups((g) => g.filter((x) => x.id !== bv.groupId))
+                          } else {
+                            setBoardGroups((groups) => groups.map((g) => {
+                              if (g.id !== bv.groupId) return g
+                              const xs = remainingInGroup.map((v) => boardCardPositions[v.id]?.x ?? v.x)
+                              const minX = Math.min(...xs)
+                              const maxX = Math.max(...xs)
+                              return { ...g, x: minX - GROUP_PAD, w: maxX + VISUAL_W - minX + GROUP_PAD * 2 }
+                            }))
+                          }
+                        }
+                      }}
                     >
-                      <div className="canvas-page__template-top">
-                        <div className="canvas-page__template-icon">{tmpl.icon}</div>
-                      </div>
-                      <h3 className="canvas-page__template-title">{tmpl.title}</h3>
-                      <p className="canvas-page__template-description">{tmpl.description}</p>
-                    </div>
+                      ✕
+                    </button>
+                    <ChatVisual type={bv.type} />
                   </div>
                 ))}
                 {!showWelcome && <>
@@ -864,21 +1144,100 @@ export function OpenCanvasPage() {
             </div>
           </div>
         </div>
+        {/* Prompt templates overlay — pinned top-right under Share button */}
+        {!isIntersightCanvas && !selectedBoardCategory && !fromActions && !initialPrompt && !boardTemplatesHidden && (
+          <div className="canvas-tmpl-overlay">
+            <div
+              className="canvas-board-group"
+              style={{ left: GROUP_X, top: GROUP_Y, width: GROUP_W, height: GROUP_H }}
+              aria-hidden
+            >
+              <span className="canvas-board-group__header">Prompt categories</span>
+            </div>
+            {BOARD_TEMPLATES.map((tmpl) => (
+              <div
+                key={tmpl.id}
+                className="open-canvas__board-card-draggable"
+                style={{ left: getBoardCardPosition(tmpl.id).x, top: getBoardCardPosition(tmpl.id).y, width: CARD_W }}
+              >
+                <div
+                  className={`canvas-page__template-card ${tmpl.color}`}
+                  style={{ width: CARD_W, cursor: 'pointer' }}
+                  onClick={() => handleCategorySelect(tmpl.id)}
+                >
+                  <div className="canvas-page__template-top">
+                    <div className="canvas-page__template-icon">{tmpl.icon}</div>
+                  </div>
+                  <h3 className="canvas-page__template-title">{tmpl.title}</h3>
+                  <p className="canvas-page__template-description">{tmpl.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Prompt categories modal — shown on load for /canvas/open */}
+        {!isIntersightCanvas && !fromActions && categoriesModalOpen && (
+          <div
+            className="prompt-categories-modal-backdrop"
+            onClick={() => { setCategoriesModalOpen(false); setBoardTemplatesHidden(true) }}
+          >
+            <div className="prompt-categories-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="prompt-categories-modal__header">
+                <span className="prompt-categories-modal__title">Prompt templates</span>
+                <button
+                  type="button"
+                  className="prompt-categories-modal__close"
+                  onClick={() => { setCategoriesModalOpen(false); setBoardTemplatesHidden(true) }}
+                  aria-label="Close"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="prompt-categories-modal__grid">
+                {BOARD_TEMPLATES.map((tmpl) => (
+                  <button
+                    key={tmpl.id}
+                    type="button"
+                    className={`canvas-page__template-card ${tmpl.color} prompt-categories-modal__card`}
+                    onClick={() => { handleCategorySelect(tmpl.id); setCategoriesModalOpen(false) }}
+                  >
+                    <div className="canvas-page__template-top">
+                      <div className="canvas-page__template-icon">{tmpl.icon}</div>
+                    </div>
+                    <h3 className="canvas-page__template-title">{tmpl.title}</h3>
+                    <p className="canvas-page__template-description">{tmpl.description}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
         <div className="open-canvas__zoom-controls" aria-label="Board controls">
-          <button type="button" className="open-canvas__tool-btn" onClick={() => {}} aria-label="Add an image" title="Add an image">
-            <IconFile className="open-canvas__tool-btn-icon" aria-hidden />
-            <span className="open-canvas__tool-btn-label">Add image</span>
-          </button>
-          <button type="button" className="open-canvas__tool-btn" onClick={addStickyNote} aria-label="Add a sticky note" title="Add a sticky note">
-            <IconPencil className="open-canvas__tool-btn-icon" aria-hidden />
-            <span className="open-canvas__tool-btn-label">Sticky note</span>
-          </button>
-          <div className="open-canvas__zoom-sep" aria-hidden />
-          <button type="button" className="open-canvas__zoom-btn" onClick={zoomOut} aria-label="Zoom out" title="Zoom out">−</button>
-          <button type="button" className="open-canvas__zoom-btn" onClick={zoomIn} aria-label="Zoom in" title="Zoom in">+</button>
-          <button type="button" className="open-canvas__zoom-reset" onClick={zoomReset} aria-label="Reset zoom" title="Reset zoom">
-            {Math.round(zoom * 100)}%
-          </button>
+          {/* Add to canvas group */}
+          <div className="open-canvas__toolbar-group">
+            <button type="button" className="open-canvas__toolbar-icon-btn" onClick={() => {}} aria-label="Upload image" title="Upload image">
+              <IconUpload />
+            </button>
+            <div className="open-canvas__toolbar-divider" aria-hidden />
+            <button type="button" className="open-canvas__toolbar-icon-btn" onClick={addStickyNote} aria-label="Add sticky note" title="Add sticky note">
+              <IconStickyNote />
+            </button>
+          </div>
+          {/* Zoom group */}
+          <div className="open-canvas__toolbar-group">
+            <button type="button" className="open-canvas__toolbar-icon-btn" onClick={zoomOut} aria-label="Zoom out" title="Zoom out">
+              <IconMinus />
+            </button>
+            <div className="open-canvas__toolbar-divider" aria-hidden />
+            <button type="button" className="open-canvas__toolbar-icon-btn open-canvas__toolbar-icon-btn--zoom-pct" onClick={zoomReset} aria-label="Reset zoom" title="Reset zoom">
+              {Math.round(zoom * 100)}%
+            </button>
+            <div className="open-canvas__toolbar-divider" aria-hidden />
+            <button type="button" className="open-canvas__toolbar-icon-btn" onClick={zoomIn} aria-label="Zoom in" title="Zoom in">
+              <IconPlus />
+            </button>
+          </div>
         </div>
       </div>
     </div>

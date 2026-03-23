@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   IconArrowUpRight,
   IconPlus,
@@ -43,11 +43,14 @@ export interface ActionsDetailProps {
   onAddMetricsToBoard?: () => void
   /** When true, hide the "+" in metrics widget (e.g. widget already on board) */
   metricsOnBoard?: boolean
+  /** Pre-populate chat with these messages (e.g. carried over from Actions page) */
+  initialMessages?: ChatMessage[]
 }
 
-export function ActionsDetail({ hideOpenCanvas, compact, onAddMetricsToBoard, metricsOnBoard }: ActionsDetailProps = {}) {
+export function ActionsDetail({ hideOpenCanvas, compact, onAddMetricsToBoard, metricsOnBoard, initialMessages }: ActionsDetailProps = {}) {
+  const navigate = useNavigate()
   const [inputValue, setInputValue] = useState('')
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [messages, setMessages] = useState<ChatMessage[]>(() => initialMessages ?? [])
   const [isTyping, setIsTyping] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const hasText = inputValue.trim().length > 0
@@ -85,10 +88,14 @@ export function ActionsDetail({ hideOpenCanvas, compact, onAddMetricsToBoard, me
               <IconDotsThree />
             </button>
             {!hideOpenCanvas && (
-              <Link to="/canvas/open" className="ai-button ai-button--primary actions-detail__open-canvas">
+              <button
+                type="button"
+                className="ai-button ai-button--primary actions-detail__open-canvas"
+                onClick={() => navigate('/canvas/open', { state: { actionsMessages: messages } })}
+              >
                 Open canvas
                 <IconArrowUpRight className="actions-detail__open-icon" />
-              </Link>
+              </button>
             )}
           </div>
         </div>

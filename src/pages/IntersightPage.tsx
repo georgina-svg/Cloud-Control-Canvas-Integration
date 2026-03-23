@@ -1,5 +1,10 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import type React from 'react'
+import { useNavigate, useSearchParams, useOutletContext, useLocation } from 'react-router-dom'
+import { IconNav, IconSend, IconCaretDown } from '../components/icons'
+import { ChatPanel } from '../components/ChatPanel'
+import type { LayoutOutletContext } from '../components/Layout'
+import { INTERSIGHT_PROMPT_CATEGORIES, IntersightPromptCat } from '../components/IntersightPromptCats'
 
 // ─── DonutChart ──────────────────────────────────────────────────────────────
 
@@ -274,10 +279,46 @@ const HX_CLUSTERS = [
 
 // ─── IntersightPage ───────────────────────────────────────────────────────────
 
-export function IntersightPage() {
+export function IntersightPage({ onDismissCanvas, canvasWidth }: { onDismissCanvas?: () => void; canvasWidth?: number | null } = {}) {
   const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const [searchParams] = useSearchParams()
+  const { threads, intersightMessages, setIntersightMessages, intersightTyping, setIntersightTyping } = useOutletContext<LayoutOutletContext>()
   const [activeTab, setActiveTab] = useState(0)
   const [bannerVisible, setBannerVisible] = useState(true)
+  const [assistantClosing, setAssistantClosing] = useState(false)
+  const [threadsPanelOpen, setThreadsPanelOpen] = useState(false)
+
+  const assistantOpen = searchParams.get('chat') === '1'
+
+  const [chatInput, setChatInput] = useState('')
+  const msgsEndRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    msgsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [intersightMessages, intersightTyping])
+
+  const closeAssistant = () => {
+    setAssistantClosing(true)
+    setTimeout(() => {
+      setAssistantClosing(false)
+      navigate('/intersight')
+    }, 300)
+  }
+
+  const handleSend = useCallback(() => {
+    const text = chatInput.trim()
+    if (!text) return
+    const now = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+    setIntersightMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'user', text, time: now }])
+    setChatInput('')
+    setIntersightTyping(true)
+    setTimeout(() => {
+      const replyTime = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+      setIntersightMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'assistant', text: "I'm analyzing your Intersight data now. I'll surface insights and recommended actions for you.", time: replyTime }])
+      setIntersightTyping(false)
+    }, 1200)
+  }, [chatInput, setIntersightMessages, setIntersightTyping])
 
   const openCanvas = () => {
     navigate('/intersight/canvas', {
@@ -291,8 +332,26 @@ export function IntersightPage() {
     })
   }
 
+  const isCanvasOpen = pathname.startsWith('/intersight/canvas')
+
+  const dismissWidth = canvasWidth != null ? window.innerWidth - canvasWidth : null
+
   return (
-    <div className="intersight-page">
+    <div
+      className={`intersight-page${isCanvasOpen ? ' intersight-page--canvas-open' : ''}`}
+      style={dismissWidth != null ? { '--isp-dismiss-width': `${dismissWidth}px` } as React.CSSProperties : undefined}
+    >
+      {isCanvasOpen && (
+        <div
+          className="intersight-page__canvas-dismiss"
+          aria-label="Close canvas"
+          role="button"
+          tabIndex={0}
+          style={canvasWidth != null ? { width: `${window.innerWidth - canvasWidth}px` } : undefined}
+          onClick={() => onDismissCanvas ? onDismissCanvas() : navigate('/intersight')}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onDismissCanvas ? onDismissCanvas() : navigate('/intersight') }}
+        />
+      )}
       {/* ── Sidebar ── */}
       <nav className="isp__sidebar" aria-label="Intersight navigation">
         <div className="isp__sidebar-logo">
@@ -535,6 +594,106 @@ export function IntersightPage() {
 
         </div>
       </div>
+
+      {(assistantOpen || assistantClosing) && (
+        <>
+          <div className={`isp__assistant-panel${assistantClosing ? ' isp__assistant-panel--closing' : ''}`}>
+            {threadsPanelOpen && (
+              <ChatPanel canvasInline onClose={() => setThreadsPanelOpen(false)} injectedThreads={threads} />
+            )}
+            <header className="open-canvas__chat-header">
+              <button type="button" className="open-canvas__expand-btn" aria-label="Toggle threads" onClick={() => setThreadsPanelOpen((v) => !v)}>
+                <IconNav />
+              </button>
+              <button type="button" className="open-canvas__close-canvas-btn" onClick={closeAssistant}>
+                Close
+              </button>
+            </header>
+
+            <div className="open-canvas__assistant-body">
+              <div className="canvas-welcome">
+                {intersightMessages.length === 0 && (
+                  <>
+                    <div className="canvas-welcome__hero">
+                      <h2 className="canvas-welcome__heading">Where should we begin?</h2>
+                      <p className="canvas-welcome__desc">Welcome to your canvas. Use it to visualize your network, solve issues quickly, and work together with your team. Explore the prompt categories.</p>
+                    </div>
+                    <div className="canvas-welcome__cats">
+                      {INTERSIGHT_PROMPT_CATEGORIES.map((cat) => (
+                        <IntersightPromptCat key={cat.id} label={cat.label} icon={cat.icon} />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+              {intersightMessages.length > 0 && (
+                <div className="canvas-chat-messages">
+                  {intersightMessages.map((msg) => (
+                    <div key={msg.id} className={`canvas-chat-msg canvas-chat-msg--${msg.role}`}>
+                      <div className="canvas-chat-msg__header">
+                        {msg.role === 'user' ? (
+                          <>
+                            <span className="canvas-chat-msg__avatar" aria-hidden>A</span>
+                            <span className="canvas-chat-msg__name">You</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="canvas-chat-msg__ai-icon" aria-hidden>AI</span>
+                            <span className="canvas-chat-msg__name">AI Assistant</span>
+                            <span className="canvas-chat-msg__timestamp">{msg.time}</span>
+                          </>
+                        )}
+                      </div>
+                      <p className="canvas-chat-msg__text">{msg.text}</p>
+                    </div>
+                  ))}
+                  {intersightTyping && (
+                    <div className="canvas-chat-msg canvas-chat-msg--assistant">
+                      <div className="canvas-chat-msg__header">
+                        <span className="canvas-chat-msg__ai-icon" aria-hidden>AI</span>
+                        <span className="canvas-chat-msg__name">AI Assistant</span>
+                      </div>
+                      <div className="actions-detail__typing" aria-label="Assistant is typing">
+                        <span /><span /><span />
+                      </div>
+                    </div>
+                  )}
+                  <div ref={msgsEndRef} />
+                </div>
+              )}
+            </div>
+
+            <footer className="open-canvas__chat-footer">
+              <div className="open-canvas__input-wrap">
+                <div className="open-canvas__input-field">
+                  <input
+                    type="text"
+                    className="open-canvas__input-placeholder"
+                    placeholder="Ask AI Assistant a question, / for prompts"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
+                    aria-label="Ask AI Assistant"
+                  />
+                  <div className="open-canvas__input-toolbar">
+                    <div className="open-canvas__input-chips">
+                      <button type="button" className="open-canvas__input-auto-btn" aria-label="Model: Auto">
+                        Auto <IconCaretDown className="open-canvas__input-auto-caret" />
+                      </button>
+                    </div>
+                    <button type="button" className="open-canvas__submit-btn" aria-label="Send message" onClick={handleSend}>
+                      <IconSend />
+                    </button>
+                  </div>
+                </div>
+                <p className="open-canvas__disclaimer">
+                  AI Assistant can make mistakes. Verify responses.
+                </p>
+              </div>
+            </footer>
+          </div>
+        </>
+      )}
     </div>
   )
 }

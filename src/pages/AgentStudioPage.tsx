@@ -12,6 +12,20 @@ import {
 
 const AGENT_STUDIO_CHOICES = [
   {
+    id: 'build',
+    title: 'Build an agent',
+    description: 'Create a new AI agent from scratch with step-by-step guidance.',
+    Icon: IconRocketMagnetic,
+    iconBg: 'linear-gradient(to bottom, #9b5ff5, #864ae0)',
+  },
+  {
+    id: 'knowledge',
+    title: 'Build knowledge base',
+    description: 'Add documents and data sources to power your agents with custom knowledge.',
+    Icon: IconFile,
+    iconBg: 'linear-gradient(to bottom, #17c2c2, #04a4b0)',
+  },
+  {
     id: 'browse',
     title: 'Browse Cisco agents',
     description: 'Discover and use pre-built agents from Cisco to automate common tasks.',
@@ -26,20 +40,6 @@ const AGENT_STUDIO_CHOICES = [
     Icon: IconRocket,
     iconBg: 'linear-gradient(to bottom, #fc8d4c, #f26722)',
     comingSoon: true,
-  },
-  {
-    id: 'build',
-    title: 'Build an agent',
-    description: 'Create a new AI agent from scratch with step-by-step guidance.',
-    Icon: IconRocketMagnetic,
-    iconBg: 'linear-gradient(to bottom, #9b5ff5, #864ae0)',
-  },
-  {
-    id: 'knowledge',
-    title: 'Build knowledge base',
-    description: 'Add documents and data sources to power your agents with custom knowledge.',
-    Icon: IconFile,
-    iconBg: 'linear-gradient(to bottom, #17c2c2, #04a4b0)',
   },
   {
     id: 'observe',
@@ -113,11 +113,11 @@ export function AgentStudioPage() {
       </div>
 
       <div className="agent-studio__choices">
-        {AGENT_STUDIO_CHOICES.map(({ id, title, description, Icon, comingSoon, iconBg }) => (
+        {AGENT_STUDIO_CHOICES.map(({ id, title, description, Icon, iconBg }) => (
           <a
             key={id}
             href="#"
-            className={`agent-studio__card${comingSoon ? ' agent-studio__card--disabled' : ''}`}
+            className="agent-studio__card"
             aria-labelledby={`agent-studio-card-${id}-title`}
           >
             <span className="agent-studio__card-icon" aria-hidden style={iconBg ? { background: iconBg } : undefined}>

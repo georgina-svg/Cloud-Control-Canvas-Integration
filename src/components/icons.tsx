@@ -420,3 +420,39 @@ export function IconTopologyNodes({ className }: { className?: string }) {
     </svg>
   )
 }
+
+export function IconUpload({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2" />
+      <polyline points="7 9 12 4 17 9" />
+      <line x1="12" y1="4" x2="12" y2="16" />
+    </svg>
+  )
+}
+
+export function IconTextT({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <line x1="4" y1="6" x2="20" y2="6" />
+      <line x1="12" y1="6" x2="12" y2="19" />
+    </svg>
+  )
+}
+
+export function IconStickyNote({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M4 4h16v12l-5 5H4V4z" />
+      <path d="M15 16v5l5-5h-5z" />
+    </svg>
+  )
+}
+
+export function IconMinus({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden>
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+  )
+}

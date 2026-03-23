@@ -138,7 +138,7 @@ export function CanvasPage() {
                           <button
                             type="button"
                             className="canvas-page__template-prompt-item"
-                            onClick={() => navigate('/canvas/open')}
+                            onClick={() => navigate('/canvas/open', { state: { initialPrompt: prompt } })}
                           >
                             {prompt}
                           </button>

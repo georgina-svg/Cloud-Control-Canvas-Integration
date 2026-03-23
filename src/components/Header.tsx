@@ -135,7 +135,7 @@ export function Header({ onHomeClick }: { onHomeClick?: () => void }) {
           </nav>
         </div>
         <div className="ai-assistant__header-right">
-          {(pathname === '/intersight' || pathname.startsWith('/intersight/')) && (
+          {(pathname === '/intersight' || pathname.startsWith('/intersight/') || pathname.startsWith('/agent-studio') || pathname.startsWith('/admin')) && (
             <>
               <button
                 type="button"
@@ -159,9 +159,9 @@ export function Header({ onHomeClick }: { onHomeClick?: () => void }) {
                 type="button"
                 className="ai-assistant__header-action-btn"
                 aria-label="Assistant"
+                disabled
               >
                 <img src="/assistant-icon.png" alt="" className="ai-assistant__header-action-btn-icon" aria-hidden />
-                Assistant
               </button>
             </>
           )}
