@@ -86,28 +86,43 @@ export function AgentStudioPage() {
     }, 300)
   }
 
-  const handleSend = useCallback(() => {
-    const text = chatInput.trim()
-    if (!text) return
-    const now = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-    setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'user', text, time: now }])
-    setChatInput('')
-    setTyping(true)
-    setTimeout(() => {
-      const replyTime = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'assistant', text: "I can help you build, connect, and manage AI agents in Agent Studio. What would you like to create?", time: replyTime }])
-      setTyping(false)
-    }, 1200)
-  }, [chatInput])
+  const AGENT_REPLIES = [
+    "I can help you build, connect, and manage AI agents in Agent Studio. What would you like to create?",
+    "Great — I can help with that. Would you like to start by defining the agent's role, or jump straight into connecting your data sources?",
+    "To set this up effectively, I'll need to know which Cisco APIs you'd like to integrate. Intersight, Meraki, and Catalyst Center are the most common starting points.",
+    "That's a solid use case. I'd recommend enabling the Telemetry & Metrics data source so the agent can detect anomalies in real time. Want me to add that?",
+    "Understood. I'll refine the agent's behavior to prioritize P1 incidents and auto-escalate when thresholds are exceeded. Anything else before we finalize?",
+  ]
 
-  const handleSendFromMain = useCallback(
-    (message: string) => {
-      const trimmed = message.trim()
-      if (!trimmed) return
-      navigate('/agent-studio/chat', { state: { initialMessage: trimmed } })
-    },
-    [navigate],
-  )
+  const replyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const sendMessage = useCallback((text: string) => {
+    if (!text.trim() || typing) return
+    const now = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+    setMessages((prev) => {
+      const updated = [...prev, { id: crypto.randomUUID(), role: 'user' as const, text: text.trim(), time: now }]
+      const turnIndex = prev.filter(m => m.role === 'assistant').length % AGENT_REPLIES.length
+      if (replyTimerRef.current) clearTimeout(replyTimerRef.current)
+      replyTimerRef.current = setTimeout(() => {
+        const replyTime = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+        setMessages((prev2) => [...prev2, { id: crypto.randomUUID(), role: 'assistant', text: AGENT_REPLIES[turnIndex], time: replyTime }])
+        setTyping(false)
+      }, 1200)
+      return updated
+    })
+    setTyping(true)
+    setAssistantOpen(true)
+  }, [typing, setAssistantOpen])
+
+  const handleSend = useCallback(() => {
+    if (!chatInput.trim()) return
+    sendMessage(chatInput)
+    setChatInput('')
+  }, [chatInput, sendMessage])
+
+  const handleSendFromMain = useCallback((message: string) => {
+    sendMessage(message)
+  }, [sendMessage])
 
   return (
     <div
@@ -238,7 +253,7 @@ export function AgentStudioPage() {
                       Auto <IconCaretDown className="open-canvas__input-auto-caret" />
                     </button>
                   </div>
-                  <button type="button" className="open-canvas__submit-btn" aria-label="Send message" onClick={handleSend}>
+                  <button type="button" className="open-canvas__submit-btn" aria-label="Send message" onClick={handleSend} disabled={!chatInput.trim() || typing}>
                     <IconSend />
                   </button>
                 </div>
