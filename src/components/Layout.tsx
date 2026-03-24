@@ -15,6 +15,8 @@ export type LayoutOutletContext = {
   setIntersightMessages: React.Dispatch<React.SetStateAction<IntersightMessage[]>>
   intersightTyping: boolean
   setIntersightTyping: React.Dispatch<React.SetStateAction<boolean>>
+  assistantOpen: boolean
+  setAssistantOpen: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 export function Layout() {
@@ -22,6 +24,7 @@ export function Layout() {
   const [threads, setThreads] = useState<{ id: string; title: string }[]>([])
   const [intersightMessages, setIntersightMessages] = useState<IntersightMessage[]>([])
   const [intersightTyping, setIntersightTyping] = useState(false)
+  const [assistantOpen, setAssistantOpen] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -43,7 +46,7 @@ export function Layout() {
 
   return (
     <div className={`ai-assistant-layout${isOpenCanvas ? ' ai-assistant-layout--open-canvas' : ''}`}>
-      <Header onHomeClick={onHomeClick} />
+      <Header onHomeClick={onHomeClick} onAssistantClick={() => setAssistantOpen((v) => !v)} assistantOpen={assistantOpen} />
       {showModeSwitcher && <ModeSwitcher />}
       <main
         className="ai-assistant-layout__main"
@@ -60,7 +63,7 @@ export function Layout() {
           overflow: 'visible',
         }}
       >
-        <Outlet context={{ chatPanelOpen, setChatPanelOpen, threads, setThreads, intersightMessages, setIntersightMessages, intersightTyping, setIntersightTyping } satisfies LayoutOutletContext} />
+        <Outlet context={{ chatPanelOpen, setChatPanelOpen, threads, setThreads, intersightMessages, setIntersightMessages, intersightTyping, setIntersightTyping, assistantOpen, setAssistantOpen } satisfies LayoutOutletContext} />
       </main>
     </div>
   )

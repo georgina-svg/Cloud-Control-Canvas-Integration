@@ -9,6 +9,7 @@ import { ActionsPage } from './pages/ActionsPage'
 import { CanvasPage } from './pages/CanvasPage'
 import { OpenCanvasPage } from './pages/OpenCanvasPage'
 import { AdminConsolePage } from './pages/AdminConsolePage'
+import { BuildAgentPage } from './pages/BuildAgentPage'
 
 function IntersightCanvasWrapper() {
   const [closing, setClosing] = useState(false)
@@ -35,6 +36,7 @@ export default function App() {
       <Route element={<Layout />}>
         <Route index element={<HomePage />} />
         <Route path="agent-studio" element={<AgentStudioPage />} />
+        <Route path="agent-studio/build" element={<BuildAgentPage />} />
         <Route path="agent-studio/chat" element={<AgentStudioChatPage />} />
         <Route path="intersight" element={<IntersightPage />} />
         <Route path="actions" element={<ActionsPage />} />

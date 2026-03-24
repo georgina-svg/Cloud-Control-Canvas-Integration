@@ -1,16 +1,14 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import {
-  IconHeartPulse, IconChart, IconSettings, IconDevice, IconShield, IconTopologyNodes, IconCaretDown,
+  IconHeartPulse, IconChart, IconSettings, IconDevice, IconCaretDown,
 } from './icons'
 
 export const INTERSIGHT_PROMPT_CATEGORIES: Array<{ id: string; label: string; icon: ReactNode }> = [
-  { id: 'health',        label: 'Health & Overview',        icon: <IconHeartPulse /> },
-  { id: 'performance',   label: 'Performance & Trends',     icon: <IconChart /> },
-  { id: 'troubleshoot',  label: 'Troubleshooting',          icon: <IconSettings /> },
-  { id: 'devices',       label: 'Devices & Inventory',      icon: <IconDevice /> },
-  { id: 'security',      label: 'Security & Access',        icon: <IconShield /> },
-  { id: 'visualization', label: 'Visualization & Topology', icon: <IconTopologyNodes /> },
+  { id: 'health',       label: 'Health & Overview',    icon: <IconHeartPulse /> },
+  { id: 'devices',      label: 'Devices & Inventory',  icon: <IconDevice /> },
+  { id: 'troubleshoot', label: 'Troubleshooting',      icon: <IconSettings /> },
+  { id: 'performance',  label: 'Performance & Trends', icon: <IconChart /> },
 ]
 
 export function IntersightPromptCat({ label, icon }: { label: string; icon: ReactNode }) {

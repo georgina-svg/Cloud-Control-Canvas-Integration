@@ -15,7 +15,7 @@ const NAV_ITEMS = [
   { label: 'Admin Console', path: '/admin-console' },
 ]
 
-export function Header({ onHomeClick }: { onHomeClick?: () => void }) {
+export function Header({ onHomeClick, onAssistantClick, assistantOpen }: { onHomeClick?: () => void; onAssistantClick?: () => void; assistantOpen?: boolean }) {
   const [appSwitcherOpen, setAppSwitcherOpen] = useState(false)
   const appSwitcherRef = useRef<HTMLDivElement>(null)
   const appSwitcherButtonRef = useRef<HTMLButtonElement>(null)
@@ -142,6 +142,7 @@ export function Header({ onHomeClick }: { onHomeClick?: () => void }) {
                 className={`ai-assistant__header-action-btn${pathname === '/intersight/canvas' ? ' ai-assistant__header-action-btn--active' : ''}`}
                 aria-label="Canvas"
                 aria-pressed={pathname === '/intersight/canvas'}
+                disabled={pathname.startsWith('/agent-studio')}
                 onClick={() => navigate('/intersight/canvas', {
                   state: {
                     breadcrumb: ['Intersight', 'Alerts', 'Active'],
@@ -157,11 +158,13 @@ export function Header({ onHomeClick }: { onHomeClick?: () => void }) {
               </button>
               <button
                 type="button"
-                className="ai-assistant__header-action-btn"
+                className={`ai-assistant__header-action-btn${assistantOpen ? ' ai-assistant__header-action-btn--active' : ''}`}
                 aria-label="Assistant"
-                disabled
+                aria-pressed={assistantOpen}
+                onClick={onAssistantClick}
               >
                 <img src="/assistant-icon.png" alt="" className="ai-assistant__header-action-btn-icon" aria-hidden />
+                Assistant
               </button>
             </>
           )}

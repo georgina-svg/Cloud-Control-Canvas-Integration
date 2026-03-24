@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import type React from 'react'
-import { useNavigate, useSearchParams, useOutletContext, useLocation } from 'react-router-dom'
+import { useNavigate, useOutletContext, useLocation } from 'react-router-dom'
 import { IconNav, IconSend, IconCaretDown } from '../components/icons'
 import { ChatPanel } from '../components/ChatPanel'
 import type { LayoutOutletContext } from '../components/Layout'
@@ -282,14 +282,11 @@ const HX_CLUSTERS = [
 export function IntersightPage({ onDismissCanvas, canvasWidth }: { onDismissCanvas?: () => void; canvasWidth?: number | null } = {}) {
   const navigate = useNavigate()
   const { pathname } = useLocation()
-  const [searchParams] = useSearchParams()
-  const { threads, intersightMessages, setIntersightMessages, intersightTyping, setIntersightTyping } = useOutletContext<LayoutOutletContext>()
+  const { threads, intersightMessages, setIntersightMessages, intersightTyping, setIntersightTyping, assistantOpen, setAssistantOpen } = useOutletContext<LayoutOutletContext>()
   const [activeTab, setActiveTab] = useState(0)
   const [bannerVisible, setBannerVisible] = useState(true)
   const [assistantClosing, setAssistantClosing] = useState(false)
   const [threadsPanelOpen, setThreadsPanelOpen] = useState(false)
-
-  const assistantOpen = searchParams.get('chat') === '1'
 
   const [chatInput, setChatInput] = useState('')
   const msgsEndRef = useRef<HTMLDivElement>(null)
@@ -302,7 +299,7 @@ export function IntersightPage({ onDismissCanvas, canvasWidth }: { onDismissCanv
     setAssistantClosing(true)
     setTimeout(() => {
       setAssistantClosing(false)
-      navigate('/intersight')
+      setAssistantOpen(false)
     }, 300)
   }
 
@@ -604,9 +601,6 @@ export function IntersightPage({ onDismissCanvas, canvasWidth }: { onDismissCanv
             <header className="open-canvas__chat-header">
               <button type="button" className="open-canvas__expand-btn" aria-label="Toggle threads" onClick={() => setThreadsPanelOpen((v) => !v)}>
                 <IconNav />
-              </button>
-              <button type="button" className="open-canvas__close-canvas-btn" onClick={closeAssistant}>
-                Close
               </button>
             </header>
 
