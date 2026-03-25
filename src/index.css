@@ -1046,7 +1046,8 @@ button, a {
   right: calc(var(--spacing-600) + 360px);
 }
 
-.as2-page .isp__assistant-panel {
+.as2-page .isp__assistant-panel,
+.acp__page .isp__assistant-panel {
   position: sticky;
   top: 0;
   height: calc(100vh - 56px);
@@ -2292,6 +2293,7 @@ button, a {
 }
 
 /* Threads list slot (replaces urgency/actions panel when list bullet is clicked) */
+
 .actions-page__threads-slot {
   position: absolute;
   left: var(--spacing-600);

@@ -1,4 +1,8 @@
 import { useState } from 'react'
+import { useOutletContext } from 'react-router-dom'
+import { ChatPanel } from '../components/ChatPanel'
+import type { LayoutOutletContext } from '../components/Layout'
+import { IconNav, IconSend, IconCaretDown } from '../components/icons'
 
 // ─── Sidebar nav ─────────────────────────────────────────────────────────────
 const SIDEBAR_NAV = [
@@ -106,8 +110,11 @@ const ROWS_PER_PAGE = 10
 
 // ─── AdminConsolePage ─────────────────────────────────────────────────────────
 export function AdminConsolePage() {
+  const { assistantOpen, threads } = useOutletContext<LayoutOutletContext>()
   const [search, setSearch] = useState('')
   const [page] = useState(1)
+  const [threadsPanelOpen, setThreadsPanelOpen] = useState(false)
+  const [assistantInput, setAssistantInput] = useState('')
 
   const filtered = INTEGRATIONS.filter((row) =>
     row.name.toLowerCase().includes(search.toLowerCase())
@@ -258,6 +265,51 @@ export function AdminConsolePage() {
 
         </div>
       </main>
+
+      {/* Assistant panel */}
+      {assistantOpen && (
+        <div className="isp__assistant-panel">
+          {threadsPanelOpen && (
+            <ChatPanel canvasInline onClose={() => setThreadsPanelOpen(false)} injectedThreads={threads} />
+          )}
+          <header className="open-canvas__chat-header">
+            <button type="button" className="open-canvas__expand-btn" aria-label="Toggle threads" onClick={() => setThreadsPanelOpen((v) => !v)}>
+              <IconNav />
+            </button>
+          </header>
+          <div className="open-canvas__assistant-body">
+            <div className="canvas-welcome__hero" style={{ padding: '32px 24px' }}>
+              <h2 className="canvas-welcome__heading">How can I help?</h2>
+              <p className="canvas-welcome__desc">Ask me anything about managing users, integrations, or your Admin Console workspace.</p>
+            </div>
+          </div>
+          <footer className="open-canvas__chat-footer">
+            <div className="open-canvas__input-wrap">
+              <div className="open-canvas__input-field">
+                <input
+                  type="text"
+                  className="open-canvas__input-placeholder"
+                  placeholder="Ask AI Assistant a question, / for prompts"
+                  value={assistantInput}
+                  onChange={(e) => setAssistantInput(e.target.value)}
+                  aria-label="Ask AI Assistant"
+                />
+                <div className="open-canvas__input-toolbar">
+                  <div className="open-canvas__input-chips">
+                    <button type="button" className="open-canvas__input-auto-btn" aria-label="Model: Auto">
+                      Auto <IconCaretDown className="open-canvas__input-auto-caret" />
+                    </button>
+                  </div>
+                  <button type="button" className="open-canvas__submit-btn" aria-label="Send message" disabled={!assistantInput.trim()}>
+                    <IconSend />
+                  </button>
+                </div>
+              </div>
+              <p className="open-canvas__disclaimer">AI Assistant can make mistakes. Verify responses.</p>
+            </div>
+          </footer>
+        </div>
+      )}
     </div>
   )
 }

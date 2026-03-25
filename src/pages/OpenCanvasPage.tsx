@@ -225,7 +225,7 @@ export function OpenCanvasPage({ closingCanvas, canvasWidth, onCanvasWidthChange
     return `${hh}:${mm} ${mo}/${dd} canvas`
   })
   const [threadsPanelOpen, setThreadsPanelOpen] = useState(false)
-  const [chatFullPage, setChatFullPage] = useState(false)
+  const [chatFullPage, setChatFullPage] = useState(() => !!(routeState as { startChatFull?: boolean } | null)?.startChatFull)
   const [selectedBoardCategory, setSelectedBoardCategory] = useState<string | null>(null)
   const [boardTemplatesHidden, setBoardTemplatesHidden] = useState(false)
   const [tmplGroupLeft, setTmplGroupLeft] = useState(600)

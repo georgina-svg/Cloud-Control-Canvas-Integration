@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useOutletContext } from 'react-router-dom'
+import { useState, useRef, useEffect } from 'react'
+import { useOutletContext, useNavigate } from 'react-router-dom'
 import { ActionsPanel } from '../components/ActionsPanel'
 import { ActionsDetail } from '../components/ActionsDetail'
 import { ChatPanel } from '../components/ChatPanel'
@@ -7,9 +7,18 @@ import { ProgressPanel } from '../components/ProgressPanel'
 import type { LayoutOutletContext } from '../components/Layout'
 
 export function ActionsPage() {
-  const { threads, setActionsMessages } = useOutletContext<LayoutOutletContext>()
+  const { threads, setActionsMessages, assistantOpen, actionsMessages } = useOutletContext<LayoutOutletContext>()
+  const navigate = useNavigate()
   const [chatPanelOpen, setChatPanelOpen] = useState(false)
   const [selectedActionId, setSelectedActionId] = useState<string | null>('1')
+  const prevAssistantOpenRef = useRef(assistantOpen)
+
+  useEffect(() => {
+    if (!prevAssistantOpenRef.current && assistantOpen) {
+      navigate('/canvas/open', { state: { actionsMessages, startChatFull: true } })
+    }
+    prevAssistantOpenRef.current = assistantOpen
+  }, [assistantOpen, actionsMessages, navigate])
 
   return (
     <div className="ai-assistant ai-assistant--actions" role="main">

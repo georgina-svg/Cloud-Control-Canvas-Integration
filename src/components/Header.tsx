@@ -137,9 +137,9 @@ export function Header({ onHomeClick, onAssistantClick, assistantOpen, actionsMe
         <div className="ai-assistant__header-right">
           <button
             type="button"
-            className={`ai-assistant__header-action-btn${(assistantOpen || pathname === '/') && pathname !== '/actions' ? ' ai-assistant__header-action-btn--active' : ''}`}
+            className={`ai-assistant__header-action-btn${assistantOpen || pathname === '/' ? ' ai-assistant__header-action-btn--active' : ''}`}
             aria-label="Assistant"
-            onClick={pathname === '/canvas/open' || pathname === '/canvas' || pathname === '/intersight' || pathname.startsWith('/intersight/') || pathname.startsWith('/agent-studio') ? onAssistantClick : undefined}
+            onClick={pathname === '/canvas/open' || pathname === '/canvas' || pathname === '/intersight' || pathname.startsWith('/intersight/') || pathname.startsWith('/agent-studio') || pathname === '/admin-console' || pathname === '/actions' ? onAssistantClick : undefined}
           >
             <img src="/assistant-icon.png" alt="" className="ai-assistant__header-action-btn-icon" aria-hidden />
           </button>
@@ -149,9 +149,12 @@ export function Header({ onHomeClick, onAssistantClick, assistantOpen, actionsMe
             aria-label="Canvas"
             aria-pressed={pathname === '/intersight/canvas'}
             onClick={() => {
-              if (pathname.startsWith('/agent-studio')) {
+              if (pathname.startsWith('/agent-studio') || pathname === '/admin-console') {
                 navigate('/canvas')
-              } else if (pathname === '/canvas' || pathname === '/canvas/open') {
+              } else if (pathname === '/canvas') {
+                return
+              } else if (pathname === '/canvas/open') {
+                if (assistantOpen) onAssistantClick?.()
                 return
               } else if (pathname === '/intersight/canvas' && assistantOpen) {
                 onAssistantClick?.()
