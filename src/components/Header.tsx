@@ -11,11 +11,11 @@ const NAV_ITEMS = [
   { label: 'Home', path: '/', icon: IconHome },
   { label: 'Meraki', path: '#' },
   { label: 'Intersight', path: '/intersight' },
-  { label: 'Agent Studio', path: '/agent-studio' },
+  { label: 'AI Studio', path: '/agent-studio' },
   { label: 'Admin Console', path: '/admin-console' },
 ]
 
-export function Header({ onHomeClick, onAssistantClick, assistantOpen }: { onHomeClick?: () => void; onAssistantClick?: () => void; assistantOpen?: boolean }) {
+export function Header({ onHomeClick, onAssistantClick, assistantOpen, actionsMessages }: { onHomeClick?: () => void; onAssistantClick?: () => void; assistantOpen?: boolean; actionsMessages?: { id: string; role: 'user' | 'assistant'; text: string }[] }) {
   const [appSwitcherOpen, setAppSwitcherOpen] = useState(false)
   const appSwitcherRef = useRef<HTMLDivElement>(null)
   const appSwitcherButtonRef = useRef<HTMLButtonElement>(null)
@@ -85,7 +85,7 @@ export function Header({ onHomeClick, onAssistantClick, assistantOpen }: { onHom
                     type="button"
                     className={`ai-assistant__nav-btn ${agentStudioActive ? 'ai-assistant__nav-btn--active' : ''}`}
                     aria-current={agentStudioActive ? 'page' : undefined}
-                    onClick={() => navigate('/agent-studio')}
+                    onClick={() => navigate('/agent-studio', { state: { reset: Date.now() } })}
                   >
                     {Icon ? <Icon className="ai-assistant__nav-icon" /> : null}
                     {label}
@@ -135,15 +135,34 @@ export function Header({ onHomeClick, onAssistantClick, assistantOpen }: { onHom
           </nav>
         </div>
         <div className="ai-assistant__header-right">
-          {(pathname === '/intersight' || pathname.startsWith('/intersight/') || pathname.startsWith('/agent-studio') || pathname.startsWith('/admin')) && (
-            <>
-              <button
-                type="button"
-                className={`ai-assistant__header-action-btn${pathname === '/intersight/canvas' ? ' ai-assistant__header-action-btn--active' : ''}`}
-                aria-label="Canvas"
-                aria-pressed={pathname === '/intersight/canvas'}
-                disabled={pathname.startsWith('/agent-studio')}
-                onClick={() => navigate('/intersight/canvas', {
+          <button
+            type="button"
+            className={`ai-assistant__header-action-btn${(assistantOpen || pathname === '/') && pathname !== '/actions' ? ' ai-assistant__header-action-btn--active' : ''}`}
+            aria-label="Assistant"
+            onClick={pathname === '/canvas/open' || pathname === '/canvas' || pathname === '/intersight' || pathname.startsWith('/intersight/') || pathname.startsWith('/agent-studio') ? onAssistantClick : undefined}
+          >
+            <img src="/assistant-icon.png" alt="" className="ai-assistant__header-action-btn-icon" aria-hidden />
+          </button>
+          <button
+            type="button"
+            className={`ai-assistant__header-action-btn${(pathname === '/intersight/canvas' && !assistantOpen || (pathname === '/canvas/open' && !assistantOpen) || pathname === '/canvas') ? ' ai-assistant__header-action-btn--active' : ''}`}
+            aria-label="Canvas"
+            aria-pressed={pathname === '/intersight/canvas'}
+            onClick={() => {
+              if (pathname.startsWith('/agent-studio')) {
+                navigate('/canvas')
+              } else if (pathname === '/canvas' || pathname === '/canvas/open') {
+                return
+              } else if (pathname === '/intersight/canvas' && assistantOpen) {
+                onAssistantClick?.()
+              } else if (pathname === '/intersight/canvas' && !assistantOpen) {
+                navigate('/intersight')
+              } else if (pathname === '/') {
+                navigate('/canvas')
+              } else if (pathname === '/actions') {
+                navigate('/canvas/open', { state: { actionsMessages } })
+              } else {
+                navigate('/intersight/canvas', {
                   state: {
                     breadcrumb: ['Intersight', 'Alerts', 'Active'],
                     title: 'FI-6400 Fabric Interconnect Degraded',
@@ -151,23 +170,13 @@ export function Header({ onHomeClick, onAssistantClick, assistantOpen }: { onHom
                     triggered: '2h 14m ago',
                     affectedClients: 1247,
                   }
-                })}
-              >
-                <img src="/canvas-icon.png" alt="" className="ai-assistant__header-action-btn-icon" aria-hidden />
-                Canvas
-              </button>
-              <button
-                type="button"
-                className={`ai-assistant__header-action-btn${assistantOpen ? ' ai-assistant__header-action-btn--active' : ''}`}
-                aria-label="Assistant"
-                aria-pressed={assistantOpen}
-                onClick={onAssistantClick}
-              >
-                <img src="/assistant-icon.png" alt="" className="ai-assistant__header-action-btn-icon" aria-hidden />
-                Assistant
-              </button>
-            </>
-          )}
+                })
+              }
+            }}
+          >
+            <img src="/canvas-icon.png" alt="" className="ai-assistant__header-action-btn-icon" aria-hidden />
+            Canvas
+          </button>
           <button type="button" className="ai-assistant__icon-btn" aria-label="Alerts">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
               <path d="M8 1.5a4.5 4.5 0 0 1 4.5 4.5c0 2.5.5 3.5 1 4H2.5c.5-.5 1-1.5 1-4A4.5 4.5 0 0 1 8 1.5z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>

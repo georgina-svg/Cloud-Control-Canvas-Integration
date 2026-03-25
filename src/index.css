@@ -1042,6 +1042,25 @@ button, a {
   left: calc(var(--spacing-600) + 64px + 8px + 280px + 8px);
 }
 
+.ai-assistant--canvas-assistant-open .canvas-page__content {
+  right: calc(var(--spacing-600) + 360px);
+}
+
+.as2-page .isp__assistant-panel {
+  position: sticky;
+  top: 0;
+  height: calc(100vh - 56px);
+  align-self: flex-start;
+}
+
+.ai-assistant--canvas .isp__assistant-panel {
+  position: fixed;
+  right: 0;
+  top: 56px;
+  height: calc(100vh - 56px);
+  z-index: 20;
+}
+
 /* Mode switcher */
 .ai-assistant__mode-switcher {
   position: absolute;
@@ -6510,6 +6529,396 @@ button, a {
 .intg__footer-link:hover {
   color: var(--brand-text-default);
   text-decoration: underline;
+}
+
+/* ── Agent Studio v2 ───────────────────────────────────────────────────────── */
+
+.as2-page {
+  display: flex;
+  min-height: calc(100vh - 56px);
+  background: #09090f;
+  color: #f0f0f5;
+  position: relative;
+  overflow: hidden;
+  font-family: var(--font-inter);
+  font-size: var(--text-p3);
+  line-height: var(--text-p3-line);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.as2-page--assistant-open {
+  overflow: hidden;
+  height: calc(100vh - 56px);
+}
+
+/* Sidebar */
+.as2-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  border-right: 1px solid rgba(255,255,255,0.06);
+  padding: 28px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: sticky;
+  top: 0;
+  height: calc(100vh - 56px);
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.as2-sidebar__new-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: rgba(155,95,245,0.15);
+  border: 1px solid rgba(155,95,245,0.35);
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #c9a6ff;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-bottom: 8px;
+}
+.as2-sidebar__new-btn:hover { background: rgba(155,95,245,0.25); }
+
+.as2-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.as2-sidebar__bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding-top: 12px;
+}
+
+.as2-sidebar__nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: none;
+  border: none;
+  border-radius: 7px;
+  padding: 9px 12px;
+  font-size: 13px;
+  color: #7a8490;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+}
+.as2-sidebar__nav-item:hover { background: rgba(255,255,255,0.06); color: #d0d6de; }
+
+.as2-sidebar__nav-icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* Main area */
+.as2-main {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.as2-main--chat {
+  overflow: hidden;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Chat mode layout */
+.as2-chat-wrap {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 960px;
+  height: 100%;
+  padding: 0 40px;
+  box-sizing: border-box;
+}
+
+.as2-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px 0 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.as2-chat-input-bar {
+  flex-shrink: 0;
+  padding: 16px 0 24px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.as2-chat-input-inner {
+  width: 100%;
+}
+
+.as2-chat-input-inner .ai-assistant__chat-wrap {
+  position: relative;
+  left: auto;
+  top: auto;
+  transform: none;
+  margin-top: 0;
+  width: 100%;
+}
+
+/* Radial background glow */
+.as2-glow {
+  position: absolute;
+  top: -120px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 700px;
+  height: 500px;
+  background: radial-gradient(ellipse at 50% 30%, rgba(100,60,220,0.22) 0%, rgba(3,179,255,0.08) 45%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.as2-center {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 960px;
+  padding: 64px 40px 100px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* Override home-page absolute positioning for ChatInput used inside Agent Studio */
+.as2-center .ai-assistant__chat-wrap {
+  position: relative;
+  left: auto;
+  top: auto;
+  transform: none;
+  margin-top: 0;
+  width: 100%;
+}
+
+/* Hero heading */
+.as2-hero {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 8px;
+}
+
+.as2-hero__heading {
+  font-size: 48px;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.15;
+  letter-spacing: -0.5px;
+}
+
+.as2-hero__heading-plain {
+  color: #e8ecf0;
+}
+
+.as2-hero__heading-gradient {
+  background: linear-gradient(90deg, #a78bfa, #38bdf8, #34d399);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.as2-hero__sub {
+  font-size: 16px;
+  color: #6b7480;
+  margin: 0;
+  line-height: 1.7;
+  max-width: 520px;
+  align-self: center;
+}
+
+/* Input card */
+.as2-input-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px;
+  padding: 16px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 0.2s;
+}
+.as2-input-card:focus-within {
+  border-color: rgba(155,95,245,0.5);
+  background: rgba(255,255,255,0.055);
+}
+
+.as2-input-card__textarea {
+  background: none;
+  border: none;
+  outline: none;
+  color: #e8ecf0;
+  font-size: 15px;
+  font-family: inherit;
+  resize: none;
+  width: 100%;
+  box-sizing: border-box;
+  line-height: 1.6;
+  min-height: 48px;
+}
+.as2-input-card__textarea::placeholder { color: #3d4550; }
+
+.as2-input-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.as2-input-card__model-btn {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: #889099;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.as2-input-card__model-btn:hover { background: rgba(255,255,255,0.1); color: #c0c8d2; }
+
+.as2-input-card__send-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #7c3aed;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.as2-input-card__send-btn:hover:not(:disabled) { background: #6d28d9; }
+.as2-input-card__send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.as2-input-card__send-btn svg { width: 16px; height: 16px; }
+
+/* Suggestion chips */
+.as2-suggestions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.as2-suggestion-chip {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px;
+  padding: 9px 18px;
+  font-size: 13px;
+  color: #8892a0;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+.as2-suggestion-chip:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(155,95,245,0.35);
+  color: #c0c8d2;
+}
+
+/* Capability cards section */
+.as2-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.as2-section__label {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 24px;
+  letter-spacing: normal;
+  text-transform: none;
+  color: #e8ecf0;
+  margin: 0;
+}
+
+.as2-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.as2-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px;
+  padding: 20px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s;
+  width: 100%;
+}
+.as2-card:hover:not(.as2-card--muted) {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.12);
+}
+.as2-card--muted { opacity: 0.5; cursor: default; }
+
+.as2-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.as2-card__icon svg { width: 18px; height: 18px; }
+
+.as2-card__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #d0d6de;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.as2-card__badge {
+  font-size: 10px;
+  font-weight: 500;
+  color: #5a6370;
+  background: rgba(255,255,255,0.06);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+.as2-card__desc {
+  font-size: 12px;
+  color: #4a5260;
+  line-height: 1.5;
 }
 
 /* ── Build Agent Page ──────────────────────────────────────────────────────── */

@@ -189,7 +189,7 @@ function generateCanvasName(prompt: string): string {
 
 export function OpenCanvasPage({ closingCanvas, canvasWidth, onCanvasWidthChange }: { closingCanvas?: boolean; canvasWidth?: number | null; onCanvasWidthChange?: (w: number) => void } = {}) {
   const { pathname, state: routeState } = useLocation()
-  const { threads, setThreads, intersightMessages, setIntersightMessages, intersightTyping, setIntersightTyping } = useOutletContext<LayoutOutletContext>()
+  const { threads, setThreads, intersightMessages, setIntersightMessages, intersightTyping, setIntersightTyping, assistantOpen } = useOutletContext<LayoutOutletContext>()
   const actionsMessages = (routeState as null | { actionsMessages?: { id: string; role: 'user' | 'assistant'; text: string }[] })?.actionsMessages
   const initialPrompt = (routeState as null | { initialPrompt?: string })?.initialPrompt ?? ''
   const canvasContext = (routeState as null | {
@@ -272,6 +272,16 @@ export function OpenCanvasPage({ closingCanvas, canvasWidth, onCanvasWidthChange
   useEffect(() => {
     canvasMsgsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [canvasMessages, canvasTyping])
+
+  // Header assistant button toggles chat-full-page (hides/shows board) on both canvas routes
+  // Use a ref to skip the initial mount so the page always starts with side-by-side view
+  const prevAssistantOpenRef = useRef(assistantOpen)
+  useEffect(() => {
+    if (prevAssistantOpenRef.current !== assistantOpen) {
+      setChatFullPage(assistantOpen)
+    }
+    prevAssistantOpenRef.current = assistantOpen
+  }, [assistantOpen])
 
   useEffect(() => {
     if (!isIntersightCanvas) return
@@ -712,15 +722,6 @@ export function OpenCanvasPage({ closingCanvas, canvasWidth, onCanvasWidthChange
           >
             <IconNav />
           </button>
-          {!isIntersightCanvas && (
-            <button
-              type="button"
-              className="open-canvas__close-canvas-btn"
-              onClick={() => setChatFullPage((prev) => !prev)}
-            >
-              {chatFullPage ? 'Open canvas' : 'Close canvas'}
-            </button>
-          )}
         </header>
         <div className="open-canvas__assistant-body">
           {showWelcome ? (

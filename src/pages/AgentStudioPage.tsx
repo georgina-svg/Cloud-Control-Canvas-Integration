@@ -1,90 +1,164 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { useNavigate, useOutletContext } from 'react-router-dom'
+import { useNavigate, useOutletContext, useLocation } from 'react-router-dom'
 import { ChatInput } from '../components/ChatInput'
 import { ChatPanel } from '../components/ChatPanel'
 import type { LayoutOutletContext } from '../components/Layout'
 import {
-  IconSearch,
-  IconRocket,
-  IconRocketMagnetic,
-  IconFile,
-  IconEye,
-  IconLightning,
-  IconNav,
-  IconSend,
-  IconCaretDown,
+  IconSearch, IconRocket, IconRocketMagnetic, IconFile, IconEye, IconLightning,
+  IconNav, IconSend, IconCaretDown,
 } from '../components/icons'
+import type React from 'react'
 
-const AGENT_STUDIO_CHOICES = [
+// ── Sidebar nav ───────────────────────────────────────────────────────────────
+
+const SIDEBAR_ITEMS = [
   {
-    id: 'build',
-    title: 'Build an agent',
-    description: 'Create a new AI agent from scratch with step-by-step guidance.',
-    Icon: IconRocketMagnetic,
-    iconBg: 'linear-gradient(to bottom, #9b5ff5, #864ae0)',
+    label: 'My Agents',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+        <circle cx="8" cy="5.5" r="2.5" stroke="currentColor" strokeWidth="1.3"/>
+        <path d="M2.5 13.5c0-3.038 2.462-5.5 5.5-5.5s5.5 2.462 5.5 5.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+      </svg>
+    ),
   },
   {
-    id: 'knowledge',
-    title: 'Build knowledge base',
-    description: 'Add documents and data sources to power your agents with custom knowledge.',
-    Icon: IconFile,
-    iconBg: 'linear-gradient(to bottom, #17c2c2, #04a4b0)',
+    label: 'Templates',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+        <rect x="2" y="2" width="5.5" height="5.5" rx="1" stroke="currentColor" strokeWidth="1.3"/>
+        <rect x="8.5" y="2" width="5.5" height="5.5" rx="1" stroke="currentColor" strokeWidth="1.3"/>
+        <rect x="2" y="8.5" width="5.5" height="5.5" rx="1" stroke="currentColor" strokeWidth="1.3"/>
+        <rect x="8.5" y="8.5" width="5.5" height="5.5" rx="1" stroke="currentColor" strokeWidth="1.3"/>
+      </svg>
+    ),
   },
   {
-    id: 'browse',
-    title: 'Browse Cisco agents',
-    description: 'Discover and use pre-built agents from Cisco to automate common tasks.',
-    Icon: IconSearch,
-    iconBg: 'linear-gradient(to bottom, #6977f0, #505ed9)',
-    comingSoon: true,
+    label: 'Knowledge Bases',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+        <path d="M3 3h10v10H3z" stroke="currentColor" strokeWidth="1.3" fill="none" rx="1"/>
+        <line x1="5.5" y1="6" x2="10.5" y2="6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+        <line x1="5.5" y1="8.5" x2="10.5" y2="8.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+        <line x1="5.5" y1="11" x2="8.5" y2="11" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+      </svg>
+    ),
   },
   {
-    id: 'bring',
-    title: 'Bring your own agent',
-    description: "Connect and manage agents you've built or integrated from other platforms.",
-    Icon: IconRocket,
-    iconBg: 'linear-gradient(to bottom, #fc8d4c, #f26722)',
-    comingSoon: true,
-  },
-  {
-    id: 'observe',
-    title: 'Observe your agents in action',
-    description: 'Monitor and analyze how your agents perform in real time across workflows.',
-    Icon: IconEye,
-    iconBg: 'linear-gradient(to bottom, #169855, #0b7b46)',
-    comingSoon: true,
-  },
-  {
-    id: 'test-run',
-    title: 'Take your agents for a test run',
-    description: 'Run your agents in a sandbox to validate behavior before deploying.',
-    Icon: IconLightning,
-    iconBg: 'linear-gradient(to bottom, #e3447c, #c2306f)',
-    comingSoon: true,
+    label: 'Deployments',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+        <path d="M8 2L14 5v6L8 14 2 11V5L8 2z" stroke="currentColor" strokeWidth="1.3" fill="none"/>
+        <circle cx="8" cy="8" r="2" fill="currentColor" opacity="0.7"/>
+      </svg>
+    ),
   },
 ]
 
+const SIDEBAR_BOTTOM = [
+  {
+    label: 'API Keys',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+        <circle cx="6" cy="8" r="3.5" stroke="currentColor" strokeWidth="1.3"/>
+        <path d="M8.5 8h5.5M12 6.5V8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+      </svg>
+    ),
+  },
+  {
+    label: 'Settings',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+        <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.3"/>
+        <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+      </svg>
+    ),
+  },
+]
+
+// ── Agent templates ───────────────────────────────────────────────────────────
+
+const AGENT_TEMPLATES = [
+  {
+    id: 'incident-response',
+    title: 'Incident Response Agent',
+    description: 'Automatically detect, triage, and respond to P1/P2 incidents across your Cisco infrastructure.',
+    Icon: IconLightning,
+    color: 'canvas-card--orange',
+  },
+  {
+    id: 'network-health',
+    title: 'Network Health Monitor Agent',
+    description: 'Continuously monitor network health, surface anomalies, and alert your team before issues escalate.',
+    Icon: IconEye,
+    color: 'canvas-card--blue',
+  },
+  {
+    id: 'alert-correlation',
+    title: 'Alert Correlation Agent',
+    description: 'Reduce alert noise by correlating related events and surfacing only the signals that matter.',
+    Icon: IconSearch,
+    color: 'canvas-card--pink',
+  },
+  {
+    id: 'change-validation',
+    title: 'Change Validation Agent',
+    description: 'Validate network changes before and after deployment to catch regressions automatically.',
+    Icon: IconRocketMagnetic,
+    color: 'canvas-card--purple',
+  },
+  {
+    id: 'device-inventory',
+    title: 'Device Inventory Agent',
+    description: 'Track device inventory, firmware versions, and compliance status across all your sites.',
+    Icon: IconFile,
+    color: 'canvas-card--green',
+  },
+  {
+    id: 'wireless-performance',
+    title: 'Wireless Performance Agent',
+    description: 'Monitor wireless KPIs, detect interference, and recommend configuration improvements in real time.',
+    Icon: IconRocket,
+    color: 'canvas-card--teal',
+  },
+]
+
+// ── Suggestion chips ──────────────────────────────────────────────────────────
+
+const SUGGESTIONS = [
+  'Troubleshooting incidents faster',
+  'Monitor & fix wireless issues',
+  'Build agents from my documentation',
+  'Automate change validation',
+  'Correlate alerts and reduce noise',
+]
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
 export function AgentStudioPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { threads, assistantOpen, setAssistantOpen } = useOutletContext<LayoutOutletContext>()
-  const [assistantClosing, setAssistantClosing] = useState(false)
   const [threadsPanelOpen, setThreadsPanelOpen] = useState(false)
   const [chatInput, setChatInput] = useState('')
   const [messages, setMessages] = useState<{ id: string; role: 'user' | 'assistant'; text: string; time: string }[]>([])
   const [typing, setTyping] = useState(false)
+  const [chatMode, setChatMode] = useState(false)
+
+  // Reset to landing when nav button clicked while already on this page
+  useEffect(() => {
+    const state = location.state as null | { reset?: number }
+    if (state?.reset) {
+      setChatMode(false)
+      setMessages([])
+      setAssistantOpen(false)
+    }
+  }, [location.state, setAssistantOpen])
   const msgsEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     msgsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, typing])
 
-  const closeAssistant = () => {
-    setAssistantClosing(true)
-    setTimeout(() => {
-      setAssistantClosing(false)
-      setAssistantOpen(false)
-    }, 300)
-  }
 
   const AGENT_REPLIES = [
     "I can help you build, connect, and manage AI agents in Agent Studio. What would you like to create?",
@@ -111,8 +185,8 @@ export function AgentStudioPage() {
       return updated
     })
     setTyping(true)
-    setAssistantOpen(true)
-  }, [typing, setAssistantOpen])
+    setChatMode(true)
+  }, [typing])
 
   const handleSend = useCallback(() => {
     if (!chatInput.trim()) return
@@ -120,66 +194,137 @@ export function AgentStudioPage() {
     setChatInput('')
   }, [chatInput, sendMessage])
 
-  const handleSendFromMain = useCallback((message: string) => {
-    sendMessage(message)
-  }, [sendMessage])
 
   return (
-    <div
-      className={`ai-assistant--agent-studio${assistantOpen || assistantClosing ? ' agent-studio--panel-open' : ''}`}
-      role="main"
-      style={{
-        paddingTop: 72,
-        minHeight: '100vh',
-        width: '100%',
-        position: 'relative',
-        overflow: 'visible',
-        boxSizing: 'border-box',
-        zIndex: 1,
-        display: assistantOpen || assistantClosing ? 'flex' : 'block',
-        background: '#000217',
-      }}
-    >
-      <div className="agent-studio__content" style={{ position: 'relative', zIndex: 2, padding: '0 16px', color: '#f7f7f7', fontSize: 16, opacity: 1, visibility: 'visible', flex: 1, minWidth: 0 }}>
-        <section className="agent-studio__hero" aria-labelledby="agent-studio-title" style={{ color: '#f7f7f7', opacity: 1 }}>
-          <h1 id="agent-studio-title" className="agent-studio__title" style={{ fontSize: 40, margin: '0 0 16px', color: '#f7f7f7' }}>
-            Welcome to Agent Studio
-          </h1>
-          <p className="agent-studio__blurb" style={{ fontSize: 18, color: '#889099', margin: '0 auto' }}>
-            Agent Studio helps you discover, connect, and build AI agents that automate workflows and extend your team. Let's get started.
-          </p>
-        </section>
+    <div className="as2-page">
 
-        <div className="agent-studio__chat">
-          <ChatInput placeholder="How can I help?" showChips={false} onSubmit={handleSendFromMain} />
-        </div>
+      {/* Left sidebar */}
+      <aside className="as2-sidebar">
+        <button type="button" className="as2-sidebar__new-btn" onClick={() => navigate('/agent-studio/build')}>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+            <path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+          New agent
+        </button>
 
-        <div className="agent-studio__choices">
-          {AGENT_STUDIO_CHOICES.map(({ id, title, description, Icon, iconBg }) => (
-            <a
-              key={id}
-              href="#"
-              className="agent-studio__card"
-              aria-labelledby={`agent-studio-card-${id}-title`}
-              onClick={(e) => { if (id === 'build') { e.preventDefault(); navigate('/agent-studio/build') } }}
-            >
-              <span className="agent-studio__card-icon" aria-hidden style={iconBg ? { background: iconBg } : undefined}>
-                <Icon />
-              </span>
-              <h2 id={`agent-studio-card-${id}-title`} className="agent-studio__card-title">
-                {title}
-              </h2>
-              <p className="agent-studio__card-description">
-                {description}
-              </p>
-            </a>
+        <nav className="as2-sidebar__nav">
+          {SIDEBAR_ITEMS.map((item) => (
+            <button key={item.label} type="button" className="as2-sidebar__nav-item">
+              <span className="as2-sidebar__nav-icon">{item.icon}</span>
+              {item.label}
+            </button>
           ))}
-        </div>
+        </nav>
+
+      </aside>
+
+      {/* Main area */}
+      <div className={`as2-main${chatMode ? ' as2-main--chat' : ''}`}>
+        <div className="as2-glow" aria-hidden />
+
+        {chatMode ? (
+          /* ── Chat mode ── */
+          <div className="as2-chat-wrap">
+            <div className="as2-chat-messages">
+              {messages.map((msg) => (
+                <div key={msg.id} className={`canvas-chat-msg canvas-chat-msg--${msg.role}`}>
+                  <div className="canvas-chat-msg__header">
+                    {msg.role === 'user' ? (
+                      <><span className="canvas-chat-msg__avatar" aria-hidden>A</span><span className="canvas-chat-msg__name">You</span></>
+                    ) : (
+                      <><span className="canvas-chat-msg__ai-icon" aria-hidden>AI</span><span className="canvas-chat-msg__name">AI Assistant</span><span className="canvas-chat-msg__timestamp">{msg.time}</span></>
+                    )}
+                  </div>
+                  <p className="canvas-chat-msg__text">{msg.text}</p>
+                </div>
+              ))}
+              {typing && (
+                <div className="canvas-chat-msg canvas-chat-msg--assistant">
+                  <div className="canvas-chat-msg__header">
+                    <span className="canvas-chat-msg__ai-icon" aria-hidden>AI</span>
+                    <span className="canvas-chat-msg__name">AI Assistant</span>
+                  </div>
+                  <div className="actions-detail__typing" aria-label="Assistant is typing"><span /><span /><span /></div>
+                </div>
+              )}
+              <div ref={msgsEndRef} />
+            </div>
+            <div className="as2-chat-input-bar">
+              <div className="as2-chat-input-inner">
+                <ChatInput
+                  placeholder="Describe the agent you want to build, or ask anything…"
+                  showChips={false}
+                  onSubmit={sendMessage}
+                />
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* ── Landing mode ── */
+          <div className="as2-center">
+
+            {/* Greeting */}
+            <div className="as2-hero">
+              <h1 className="as2-hero__heading">
+                <span className="as2-hero__heading-plain">What will you </span>
+                <span className="as2-hero__heading-gradient">build today?</span>
+              </h1>
+              <p className="as2-hero__sub">Build, connect, and deploy AI agents that automate workflows across your Cisco infrastructure.</p>
+            </div>
+
+            {/* Input */}
+            <ChatInput
+              placeholder="Describe the agent you want to build, or ask anything…"
+              showChips={false}
+              onSubmit={sendMessage}
+            />
+
+            {/* Suggestion chips */}
+            <div className="as2-suggestions">
+              {SUGGESTIONS.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  className="as2-suggestion-chip"
+                  onClick={() => sendMessage(s)}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+
+            {/* Agent template cards */}
+            <div className="as2-section">
+              <h2 className="as2-section__label">Start with a template</h2>
+              <div className="as2-cards">
+                {AGENT_TEMPLATES.map(({ id, title, description, Icon, color }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className={`canvas-page__template-card ${color}`}
+                    onClick={() => navigate('/agent-studio/build')}
+                    aria-label={title}
+                    style={{ textAlign: 'left', cursor: 'pointer', width: '100%', border: 'none' }}
+                  >
+                    <div className="canvas-page__template-top">
+                      <div className="canvas-page__template-icon">
+                        <Icon />
+                      </div>
+                    </div>
+                    <h3 className="canvas-page__template-title">{title}</h3>
+                    <p className="canvas-page__template-description">{description}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+          </div>
+        )}
       </div>
 
-      {/* Docked assistant panel */}
-      {(assistantOpen || assistantClosing) && (
-        <div className={`isp__assistant-panel${assistantClosing ? ' isp__assistant-panel--closing' : ''}`}>
+      {/* Assistant panel */}
+      {assistantOpen && (
+        <div className="isp__assistant-panel">
           {threadsPanelOpen && (
             <ChatPanel canvasInline onClose={() => setThreadsPanelOpen(false)} injectedThreads={threads} />
           )}
@@ -188,53 +333,12 @@ export function AgentStudioPage() {
               <IconNav />
             </button>
           </header>
-
           <div className="open-canvas__assistant-body">
-            <div className="canvas-welcome">
-              {messages.length === 0 && (
-                <div className="canvas-welcome__hero">
-                  <h2 className="canvas-welcome__heading">How can I help?</h2>
-                  <p className="canvas-welcome__desc">Ask me anything about building agents, connecting APIs, or managing your Agent Studio workspace.</p>
-                </div>
-              )}
+            <div className="canvas-welcome__hero" style={{ padding: '32px 24px' }}>
+              <h2 className="canvas-welcome__heading">How can I help?</h2>
+              <p className="canvas-welcome__desc">Ask me anything about building agents, connecting APIs, or managing your AI Studio workspace.</p>
             </div>
-            {messages.length > 0 && (
-              <div className="canvas-chat-messages">
-                {messages.map((msg) => (
-                  <div key={msg.id} className={`canvas-chat-msg canvas-chat-msg--${msg.role}`}>
-                    <div className="canvas-chat-msg__header">
-                      {msg.role === 'user' ? (
-                        <>
-                          <span className="canvas-chat-msg__avatar" aria-hidden>A</span>
-                          <span className="canvas-chat-msg__name">You</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="canvas-chat-msg__ai-icon" aria-hidden>AI</span>
-                          <span className="canvas-chat-msg__name">AI Assistant</span>
-                          <span className="canvas-chat-msg__timestamp">{msg.time}</span>
-                        </>
-                      )}
-                    </div>
-                    <p className="canvas-chat-msg__text">{msg.text}</p>
-                  </div>
-                ))}
-                {typing && (
-                  <div className="canvas-chat-msg canvas-chat-msg--assistant">
-                    <div className="canvas-chat-msg__header">
-                      <span className="canvas-chat-msg__ai-icon" aria-hidden>AI</span>
-                      <span className="canvas-chat-msg__name">AI Assistant</span>
-                    </div>
-                    <div className="actions-detail__typing" aria-label="Assistant is typing">
-                      <span /><span /><span />
-                    </div>
-                  </div>
-                )}
-                <div ref={msgsEndRef} />
-              </div>
-            )}
           </div>
-
           <footer className="open-canvas__chat-footer">
             <div className="open-canvas__input-wrap">
               <div className="open-canvas__input-field">
@@ -253,7 +357,7 @@ export function AgentStudioPage() {
                       Auto <IconCaretDown className="open-canvas__input-auto-caret" />
                     </button>
                   </div>
-                  <button type="button" className="open-canvas__submit-btn" aria-label="Send message" onClick={handleSend} disabled={!chatInput.trim() || typing}>
+                  <button type="button" className="open-canvas__submit-btn" aria-label="Send message" onClick={handleSend} disabled={!chatInput.trim()}>
                     <IconSend />
                   </button>
                 </div>

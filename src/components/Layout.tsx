@@ -6,6 +6,8 @@ import { ModeSwitcher } from './ModeSwitcher'
 
 export type IntersightMessage = { id: string; role: 'user' | 'assistant'; text: string; time: string }
 
+export type ActionsMessage = { id: string; role: 'user' | 'assistant'; text: string }
+
 export type LayoutOutletContext = {
   chatPanelOpen: boolean
   setChatPanelOpen: (open: boolean) => void
@@ -17,6 +19,8 @@ export type LayoutOutletContext = {
   setIntersightTyping: React.Dispatch<React.SetStateAction<boolean>>
   assistantOpen: boolean
   setAssistantOpen: React.Dispatch<React.SetStateAction<boolean>>
+  actionsMessages: ActionsMessage[]
+  setActionsMessages: React.Dispatch<React.SetStateAction<ActionsMessage[]>>
 }
 
 export function Layout() {
@@ -25,6 +29,7 @@ export function Layout() {
   const [intersightMessages, setIntersightMessages] = useState<IntersightMessage[]>([])
   const [intersightTyping, setIntersightTyping] = useState(false)
   const [assistantOpen, setAssistantOpen] = useState(false)
+  const [actionsMessages, setActionsMessages] = useState<ActionsMessage[]>([])
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -46,7 +51,7 @@ export function Layout() {
 
   return (
     <div className={`ai-assistant-layout${isOpenCanvas ? ' ai-assistant-layout--open-canvas' : ''}`}>
-      <Header onHomeClick={onHomeClick} onAssistantClick={() => setAssistantOpen((v) => !v)} assistantOpen={assistantOpen} />
+      <Header onHomeClick={onHomeClick} onAssistantClick={() => setAssistantOpen((v) => !v)} assistantOpen={assistantOpen} actionsMessages={actionsMessages} />
       {showModeSwitcher && <ModeSwitcher />}
       <main
         className="ai-assistant-layout__main"
@@ -63,7 +68,7 @@ export function Layout() {
           overflow: 'visible',
         }}
       >
-        <Outlet context={{ chatPanelOpen, setChatPanelOpen, threads, setThreads, intersightMessages, setIntersightMessages, intersightTyping, setIntersightTyping, assistantOpen, setAssistantOpen } satisfies LayoutOutletContext} />
+        <Outlet context={{ chatPanelOpen, setChatPanelOpen, threads, setThreads, intersightMessages, setIntersightMessages, intersightTyping, setIntersightTyping, assistantOpen, setAssistantOpen, actionsMessages, setActionsMessages } satisfies LayoutOutletContext} />
       </main>
     </div>
   )

@@ -1,8 +1,6 @@
 import { useState, useCallback } from 'react'
 import {
   IconPlus,
-  IconMic,
-  IconWaveform,
   IconSend,
   IconReportMagnetic,
   IconWifiMagnetic,
@@ -75,33 +73,15 @@ export function ChatInput({ placeholder = 'Ask anything', showChips = true, onSu
               onKeyDown={handleKeyDown}
             />
           </div>
-          {showSend ? (
-            <button
-              type="button"
-              className="ai-assistant__chat-field-btn ai-assistant__chat-field-btn--highlight"
-              aria-label="Send message"
-              onClick={handleSubmit}
-            >
-              <IconSend />
-            </button>
-          ) : (
-            <>
-              <button
-                type="button"
-                className="ai-assistant__chat-field-btn"
-                aria-label="Voice input"
-              >
-                <IconMic />
-              </button>
-              <button
-                type="button"
-                className="ai-assistant__chat-field-btn ai-assistant__chat-field-btn--highlight"
-                aria-label="Voice output or waveform"
-              >
-                <IconWaveform />
-              </button>
-            </>
-          )}
+          <button
+            type="button"
+            className="ai-assistant__chat-field-btn ai-assistant__chat-field-btn--highlight"
+            aria-label="Send message"
+            onClick={handleSubmit}
+            disabled={!hasText || onSubmit == null}
+          >
+            <IconSend />
+          </button>
         </div>
       </div>
       {showChips && (

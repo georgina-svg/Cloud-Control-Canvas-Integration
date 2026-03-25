@@ -7,7 +7,7 @@ import { ProgressPanel } from '../components/ProgressPanel'
 import type { LayoutOutletContext } from '../components/Layout'
 
 export function ActionsPage() {
-  const { threads } = useOutletContext<LayoutOutletContext>()
+  const { threads, setActionsMessages } = useOutletContext<LayoutOutletContext>()
   const [chatPanelOpen, setChatPanelOpen] = useState(false)
   const [selectedActionId, setSelectedActionId] = useState<string | null>('1')
 
@@ -28,7 +28,7 @@ export function ActionsPage() {
           hideHamburger
         />
       )}
-      <ActionsDetail />
+      <ActionsDetail onMessagesChange={setActionsMessages} />
       <ProgressPanel />
     </div>
   )

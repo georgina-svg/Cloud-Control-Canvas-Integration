@@ -45,9 +45,11 @@ export interface ActionsDetailProps {
   metricsOnBoard?: boolean
   /** Pre-populate chat with these messages (e.g. carried over from Actions page) */
   initialMessages?: ChatMessage[]
+  /** Called whenever messages change so parent can sync them (e.g. for header canvas navigation) */
+  onMessagesChange?: (messages: ChatMessage[]) => void
 }
 
-export function ActionsDetail({ hideOpenCanvas, compact, onAddMetricsToBoard, metricsOnBoard, initialMessages }: ActionsDetailProps = {}) {
+export function ActionsDetail({ hideOpenCanvas, compact, onAddMetricsToBoard, metricsOnBoard, initialMessages, onMessagesChange }: ActionsDetailProps = {}) {
   const navigate = useNavigate()
   const [inputValue, setInputValue] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>(() => initialMessages ?? [])
@@ -58,6 +60,10 @@ export function ActionsDetail({ hideOpenCanvas, compact, onAddMetricsToBoard, me
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isTyping])
+
+  useEffect(() => {
+    onMessagesChange?.(messages)
+  }, [messages, onMessagesChange])
 
   const handleSend = () => {
     const text = inputValue.trim()
