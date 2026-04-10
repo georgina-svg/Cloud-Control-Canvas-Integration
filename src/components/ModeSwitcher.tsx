@@ -16,7 +16,10 @@ export function ModeSwitcher() {
   return (
     <div className="ai-assistant__mode-switcher" role="tablist" aria-label="Assistant mode">
       {MODES.map(({ id, label, path, icon: Icon, showBadge }) => {
-        const isActive = pathname === path || (path === '/' && pathname === '/')
+        const isActive =
+          path === '/canvas'
+            ? pathname === '/canvas' || pathname.startsWith('/canvas/')
+            : pathname === path || (path === '/' && pathname === '/')
         return (
           <Link
             key={id}

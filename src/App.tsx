@@ -7,6 +7,7 @@ import { AgentStudioChatPage } from './pages/AgentStudioChatPage'
 import { IntersightPage } from './pages/IntersightPage'
 import { ActionsPage } from './pages/ActionsPage'
 import { CanvasPage } from './pages/CanvasPage'
+import { CanvasSettingsPage } from './pages/CanvasSettingsPage'
 import { OpenCanvasPage } from './pages/OpenCanvasPage'
 import { AdminConsolePage } from './pages/AdminConsolePage'
 import { BuildAgentPage } from './pages/BuildAgentPage'
@@ -41,6 +42,7 @@ export default function App() {
         <Route path="intersight" element={<IntersightPage />} />
         <Route path="actions" element={<ActionsPage />} />
         <Route path="canvas" element={<CanvasPage />} />
+        <Route path="canvas/settings" element={<CanvasSettingsPage />} />
         <Route path="canvas/open" element={<OpenCanvasPage />} />
         <Route path="intersight/canvas" element={<IntersightCanvasWrapper />} />
         <Route path="admin-console" element={<AdminConsolePage />} />

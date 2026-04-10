@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
-import { useNavigate, useOutletContext } from 'react-router-dom'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { Link, useNavigate, useOutletContext } from 'react-router-dom'
 import type { LayoutOutletContext } from '../components/Layout'
 import {
   IconHeartPulse,
@@ -16,6 +16,11 @@ import {
 } from '../components/icons'
 import { Sidebar } from '../components/Sidebar'
 import { ChatPanel } from '../components/ChatPanel'
+import {
+  LOCAL_DEMO_USER_ID,
+  formatPersonalizationForAssistantContext,
+  userHasPersonalizationContext,
+} from '../lib/assistantPersonalization'
 
 /** Sample rows for the All canvases list view (Figma List-View node 2048:10854) */
 const CANVAS_LIST_ROWS = [
@@ -86,7 +91,21 @@ export function CanvasPage() {
       if (replyTimerRef.current) clearTimeout(replyTimerRef.current)
       replyTimerRef.current = setTimeout(() => {
         const replyTime = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-        setMessages((prev2) => [...prev2, { id: crypto.randomUUID(), role: 'assistant', text: ASSISTANT_REPLIES[turnIndex], time: replyTime }])
+        const hasP = userHasPersonalizationContext(LOCAL_DEMO_USER_ID)
+        let replyText = ASSISTANT_REPLIES[turnIndex]
+        if (hasP) {
+          if (import.meta.env.DEV) {
+            console.debug(
+              '[Assistant context injection]\n',
+              formatPersonalizationForAssistantContext(LOCAL_DEMO_USER_ID)
+            )
+          }
+          replyText = `Applying your saved personalization. ${replyText}`
+        }
+        setMessages((prev2) => [
+          ...prev2,
+          { id: crypto.randomUUID(), role: 'assistant', text: replyText, time: replyTime },
+        ])
         setTyping(false)
       }, 1200)
       return [...prev, { id: crypto.randomUUID(), role: 'user' as const, text: text.trim(), time: now }]
@@ -105,6 +124,22 @@ export function CanvasPage() {
   const [canvasSort, setCanvasSort] = useState<(typeof CANVAS_SORT_OPTIONS)[number]>('Newest')
   const [canvasFilterOpen, setCanvasFilterOpen] = useState(false)
   const filterWrapRef = useRef<HTMLDivElement>(null)
+  const [personalizationRevision, setPersonalizationRevision] = useState(0)
+
+  useEffect(() => {
+    const bump = () => setPersonalizationRevision((n) => n + 1)
+    window.addEventListener('ccc-personalization-changed', bump)
+    window.addEventListener('storage', bump)
+    return () => {
+      window.removeEventListener('ccc-personalization-changed', bump)
+      window.removeEventListener('storage', bump)
+    }
+  }, [])
+
+  const hasPersonalizationContext = useMemo(
+    () => userHasPersonalizationContext(LOCAL_DEMO_USER_ID),
+    [personalizationRevision]
+  )
 
   useEffect(() => {
     if (!canvasFilterOpen) return
@@ -136,9 +171,20 @@ export function CanvasPage() {
 
       <div className="canvas-page__content">
         <section className="canvas-page__overview" aria-labelledby="canvas-overview-heading">
-          <h1 id="canvas-overview-heading" className="canvas-page__overview-heading">
-            Welcome to AI Canvas
-          </h1>
+          <div className="canvas-page__overview-header">
+            <h1 id="canvas-overview-heading" className="canvas-page__overview-heading">
+              Welcome to AI Canvas
+            </h1>
+            <button
+              type="button"
+              className="canvas-page__overview-settings ai-button ai-button--secondary"
+              onClick={() => navigate('/canvas/settings')}
+              aria-label="Open Canvas settings"
+            >
+              <IconSettings className="canvas-page__overview-settings-icon" aria-hidden />
+              Settings
+            </button>
+          </div>
           <p className="canvas-page__overview-description">
             The workspace for AgenticOps: bring telemetry, teams, and agents into one place.
             Ask once and see across domains; agents propose solutions and you approve execution.
@@ -396,6 +442,14 @@ export function CanvasPage() {
                 </div>
               </div>
               <p className="open-canvas__disclaimer">AI Assistant can make mistakes. Verify responses.</p>
+              {hasPersonalizationContext && (
+                <p className="open-canvas__personalization-note">
+                  Saved personalization is included in assistant context.{' '}
+                  <Link className="canvas-page__overview-link" to="/canvas/settings">
+                    Edit in Settings
+                  </Link>
+                </p>
+              )}
             </div>
           </footer>
         </div>

@@ -18,6 +18,26 @@ export function IconCaretDown({ className }: { className?: string }) {
   )
 }
 
+export function IconCaretLeft({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
+      <path d="M10 4L6 8l4 4V4z" />
+    </svg>
+  )
+}
+
+export function IconInfoCircle({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <circle cx="8" cy="8" r="6.25" stroke="currentColor" strokeWidth="1.25" />
+      <path
+        fill="currentColor"
+        d="M7.25 6.75c0-.45.35-.8.75-.8s.75.35.75.8c0 .28-.12.48-.28.65l-.02.02c-.3.32-.45.55-.45 1.08h-.75c0-.78.28-1.05.55-1.35l.02-.02c.08-.08.13-.18.13-.38zm.55 3.35a.55.55 0 1 0 0-1.1.55.55 0 0 0 0 1.1z"
+      />
+    </svg>
+  )
+}
+
 export function IconGrid({ className }: { className?: string }) {
   return (
     <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden>

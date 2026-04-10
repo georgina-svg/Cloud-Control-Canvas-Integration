@@ -139,19 +139,19 @@ export function Header({ onHomeClick, onAssistantClick, assistantOpen, actionsMe
             type="button"
             className={`ai-assistant__header-action-btn${assistantOpen || pathname === '/' ? ' ai-assistant__header-action-btn--active' : ''}`}
             aria-label="Assistant"
-            onClick={pathname === '/canvas/open' || pathname === '/canvas' || pathname === '/intersight' || pathname.startsWith('/intersight/') || pathname.startsWith('/agent-studio') || pathname === '/admin-console' || pathname === '/actions' ? onAssistantClick : undefined}
+            onClick={pathname === '/canvas/open' || pathname === '/canvas' || pathname.startsWith('/canvas/') || pathname === '/intersight' || pathname.startsWith('/intersight/') || pathname.startsWith('/agent-studio') || pathname === '/admin-console' || pathname === '/actions' ? onAssistantClick : undefined}
           >
             <img src="/assistant-icon.png" alt="" className="ai-assistant__header-action-btn-icon" aria-hidden />
           </button>
           <button
             type="button"
-            className={`ai-assistant__header-action-btn${(pathname === '/intersight/canvas' && !assistantOpen || (pathname === '/canvas/open' && !assistantOpen) || pathname === '/canvas') ? ' ai-assistant__header-action-btn--active' : ''}`}
+            className={`ai-assistant__header-action-btn${(pathname === '/intersight/canvas' && !assistantOpen || (pathname === '/canvas/open' && !assistantOpen) || pathname === '/canvas' || pathname === '/canvas/settings') ? ' ai-assistant__header-action-btn--active' : ''}`}
             aria-label="Canvas"
             aria-pressed={pathname === '/intersight/canvas'}
             onClick={() => {
               if (pathname.startsWith('/agent-studio') || pathname === '/admin-console') {
                 navigate('/canvas')
-              } else if (pathname === '/canvas') {
+              } else if (pathname === '/canvas' || pathname === '/canvas/settings') {
                 return
               } else if (pathname === '/canvas/open') {
                 if (assistantOpen) onAssistantClick?.()
