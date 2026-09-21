@@ -2,17 +2,21 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Link, useNavigate, useOutletContext } from 'react-router-dom'
 import type { LayoutOutletContext } from '../components/Layout'
 import {
-  IconHeartPulse,
   IconSettings,
-  IconChart,
-  IconDevice,
-  IconShield,
   IconTopologyNodes,
   IconDotsThree,
-  IconSearch,
   IconCaretDown,
   IconNav,
   IconSend,
+  IconPlus,
+  IconInfoCircle,
+  IconGrid,
+  IconListBullets,
+  IconBarChart,
+  IconCodeDebug,
+  IconBug,
+  IconCloud,
+  IconFile,
 } from '../components/icons'
 import { Sidebar } from '../components/Sidebar'
 import { ChatPanel } from '../components/ChatPanel'
@@ -22,39 +26,190 @@ import {
   userHasPersonalizationContext,
 } from '../lib/assistantPersonalization'
 
-/** Sample rows for the All canvases list view (Figma List-View node 2048:10854) */
+/** Sample rows for the All canvases list view */
 const CANVAS_LIST_ROWS = [
-  { id: '1', name: 'Network Performance Analysis', created: 'Today, 2:30 PM', modified: 'Today, 2:30 PM', owner: 'You' },
-  { id: '2', name: 'Packet Loss Root Cause', created: 'Yesterday', modified: 'Yesterday', owner: 'You' },
-  { id: '3', name: 'Cloud Migration Strategy', created: 'Mar 7, 2025', modified: 'Mar 8, 2025', owner: 'You' },
-  { id: '4', name: 'Real-time Network Monitoring', created: 'Mar 5, 2025', modified: 'Mar 6, 2025', owner: 'You' },
-  { id: '5', name: 'Code Optimization Review', created: 'Mar 4, 2025', modified: 'Mar 4, 2025', owner: 'You' },
+  { id: '1', name: 'Hybrid Cloud Infrastructure Optimization Implementation', created: 'Today, 2:30 PM', modified: '8 minutes ago', owner: 'You' },
+  { id: '2', name: 'Packet Loss Analysis Template', created: 'Today, 2:22 PM', modified: '8 minutes ago', owner: 'You' },
+  { id: '3', name: 'Network Troubleshooting', created: 'Today, 2:18 PM', modified: '8 minutes ago', owner: 'You' },
+  { id: '4', name: 'Packet Loss Analysis Template', created: 'Yesterday', modified: '8 minutes ago', owner: 'You' },
+  { id: '5', name: 'Network Troubleshooting', created: 'Yesterday', modified: '8 minutes ago', owner: 'You' },
+  { id: '6', name: 'Hybrid Cloud Infrastructure Optimization Implementation', created: 'Mar 7, 2025', modified: '8 minutes ago', owner: 'You' },
+  { id: '7', name: 'Hybrid Cloud Infrastructure Optimization Implementation', created: 'Mar 6, 2025', modified: '8 minutes ago', owner: 'You' },
+  { id: '8', name: 'Packet Loss Analysis Template', created: 'Mar 5, 2025', modified: '8 minutes ago', owner: 'You' },
+  { id: '9', name: 'Network Troubleshooting', created: 'Mar 4, 2025', modified: '8 minutes ago', owner: 'You' },
 ]
 
-const TEMPLATES = [
+const QUICK_START = [
   {
-    title: 'Health & Overview',
-    description: 'Get a unified view of network health, alerts, and system status across your infrastructure.',
-    Icon: IconHeartPulse,
-    color: 'canvas-card--blue',
-    prompts: [
-      'How is my organization doing?',
-      'Which sites are down?',
-      'Are there any critical alerts?',
-      'Show me health trends for the past 14 days',
-      'Show me all sites with health scores below 80%',
-      'What is wrong with my network between yesterday and today?',
-    ],
+    title: 'Network Performance Analysis',
+    description: 'Analyze network performance bottlenecks.',
+    Icon: IconBarChart,
+    prompt: 'Analyze network performance bottlenecks across my sites.',
   },
-  { title: 'Troubleshooting', description: 'Diagnose and resolve issues fast with guided root cause analysis and remediation steps.', Icon: IconSettings, color: 'canvas-card--orange', prompts: [] },
-  { title: 'Performance & Trends', description: 'Analyze performance metrics and spot trends to proactively prevent degradation.', Icon: IconChart, color: 'canvas-card--pink', prompts: [] },
-  { title: 'Devices & Inventory', description: 'Explore device inventory, configurations, and connectivity across your network.', Icon: IconDevice, color: 'canvas-card--green', prompts: [] },
-  { title: 'Security & Access', description: 'Review access policies, detect anomalies, and strengthen your security posture.', Icon: IconShield, color: 'canvas-card--purple', prompts: [] },
-  { title: 'Visualization & Topology', description: 'Map and visualize your network topology for clearer situational awareness.', Icon: IconTopologyNodes, color: 'canvas-card--teal', prompts: [] },
+  {
+    title: 'Code Optimization and Debugging',
+    description: 'Identify and resolve code inefficiencies.',
+    Icon: IconCodeDebug,
+    prompt: 'Identify and resolve code inefficiencies in my automation scripts.',
+  },
+  {
+    title: 'Network Chart Visualization',
+    description: 'Analyze network performance bottlenecks.',
+    Icon: IconTopologyNodes,
+    prompt: 'Visualize network performance bottlenecks as charts.',
+  },
+  {
+    title: 'Packet Loss Root Cause Analysis',
+    description: 'Pinpoint the source of packet loss issues.',
+    Icon: IconBug,
+    prompt: 'Pinpoint the source of packet loss issues.',
+  },
+  {
+    title: 'Real-time Network Monitoring',
+    description: 'Monitor your network in real-time with key metrics.',
+    Icon: IconFile,
+    prompt: 'Monitor my network in real-time with key metrics.',
+  },
+  {
+    title: 'Cloud Migration Strategy',
+    description: 'Plan your cloud migration with this strategic template.',
+    Icon: IconCloud,
+    prompt: 'Plan a cloud migration strategy for my hybrid infrastructure.',
+  },
+] as const
+
+type CanvasPreviewVariant = 'charts' | 'flow' | 'ops'
+
+const RECENT_CANVASES: {
+  id: string
+  title: string
+  edited: string
+  preview: CanvasPreviewVariant
+}[] = [
+  { id: 'r1', title: 'Hybrid Cloud Infrastructure Optimization Implementation', edited: 'Edited 8 minutes ago', preview: 'charts' },
+  { id: 'r2', title: 'Packet Loss Analysis Template', edited: 'Edited 8 minutes ago', preview: 'flow' },
+  { id: 'r3', title: 'Network Troubleshooting', edited: 'Edited 8 minutes ago', preview: 'ops' },
+  { id: 'r4', title: 'Packet Loss Analysis Template', edited: 'Edited 8 minutes ago', preview: 'flow' },
+  { id: 'r5', title: 'Network Troubleshooting', edited: 'Edited 8 minutes ago', preview: 'ops' },
+  { id: 'r6', title: 'Hybrid Cloud Infrastructure Optimization Implementation', edited: 'Edited 8 minutes ago', preview: 'charts' },
+  { id: 'r7', title: 'Hybrid Cloud Infrastructure Optimization Implementation', edited: 'Edited 8 minutes ago', preview: 'charts' },
+  { id: 'r8', title: 'Packet Loss Analysis Template', edited: 'Edited 8 minutes ago', preview: 'flow' },
+  { id: 'r9', title: 'Network Troubleshooting', edited: 'Edited 8 minutes ago', preview: 'ops' },
 ]
 
-type TemplateItem = (typeof TEMPLATES)[number]
+function CanvasThumb({ variant }: { variant: CanvasPreviewVariant }) {
+  return (
+    <div className={`canvas-hub__thumb canvas-hub__thumb--${variant}`} aria-hidden>
+      {variant === 'charts' && (
+        <>
+          <div className="canvas-hub__widget canvas-hub__widget--cyan">
+            <span className="canvas-hub__spark canvas-hub__spark--line" />
+          </div>
+          <div className="canvas-hub__widget canvas-hub__widget--teal">
+            <span className="canvas-hub__spark canvas-hub__spark--line" />
+          </div>
+        </>
+      )}
+      {variant === 'flow' && (
+        <>
+          <div className="canvas-hub__widget canvas-hub__widget--gold canvas-hub__widget--stack">
+            <span /><span /><span />
+          </div>
+          <div className="canvas-hub__widget canvas-hub__widget--magenta canvas-hub__widget--phone">
+            <span /><span /><span />
+          </div>
+          <div className="canvas-hub__widget canvas-hub__widget--lime">
+            <span className="canvas-hub__spark canvas-hub__spark--curve" />
+          </div>
+        </>
+      )}
+      {variant === 'ops' && (
+        <>
+          <div className="canvas-hub__widget canvas-hub__widget--cyan canvas-hub__widget--sm">
+            <span className="canvas-hub__spark canvas-hub__spark--line" />
+          </div>
+          <div className="canvas-hub__widget canvas-hub__widget--lime canvas-hub__widget--sm">
+            <span className="canvas-hub__spark canvas-hub__spark--bars" />
+          </div>
+          <div className="canvas-hub__widget canvas-hub__widget--gold canvas-hub__widget--wide">
+            <span /><span /><span />
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
 
+const PINNED_CANVASES = RECENT_CANVASES.slice(0, 3)
+
+function ViewSwitcher({
+  value,
+  onChange,
+}: {
+  value: 'grid' | 'list'
+  onChange: (next: 'grid' | 'list') => void
+}) {
+  return (
+    <div className="canvas-hub__view-toggle" role="group" aria-label="Canvas view">
+      <button
+        type="button"
+        className={`canvas-hub__view-btn${value === 'list' ? ' canvas-hub__view-btn--active' : ''}`}
+        aria-pressed={value === 'list'}
+        aria-label="List view"
+        onClick={() => onChange('list')}
+      >
+        <IconListBullets />
+      </button>
+      <button
+        type="button"
+        className={`canvas-hub__view-btn${value === 'grid' ? ' canvas-hub__view-btn--active' : ''}`}
+        aria-pressed={value === 'grid'}
+        aria-label="Grid view"
+        onClick={() => onChange('grid')}
+      >
+        <IconGrid />
+      </button>
+    </div>
+  )
+}
+
+function CanvasGalleryCard({
+  title,
+  edited,
+  preview,
+  onOpen,
+}: {
+  title: string
+  edited: string
+  preview: CanvasPreviewVariant
+  onOpen: () => void
+}) {
+  return (
+    <article className="canvas-hub__recent-card">
+      <div className="canvas-hub__recent-head">
+        <button type="button" className="canvas-hub__recent-open" onClick={onOpen}>
+          <span className="canvas-hub__recent-title">{title}</span>
+          <span className="canvas-hub__recent-meta">{edited}</span>
+        </button>
+        <button
+          type="button"
+          className="canvas-page__template-menu"
+          aria-label={`Options for ${title}`}
+        >
+          <IconDotsThree />
+        </button>
+      </div>
+      <button
+        type="button"
+        className="canvas-hub__recent-preview"
+        onClick={onOpen}
+        aria-label={`Open ${title}`}
+      >
+        <CanvasThumb variant={preview} />
+      </button>
+    </article>
+  )
+}
 const CANVAS_FILTER_OPTIONS = ['All canvases', 'Favorites', 'Created by me'] as const
 const CANVAS_SORT_OPTIONS = ['Newest', 'Oldest', 'Name A–Z'] as const
 
@@ -71,7 +226,6 @@ export function CanvasPage() {
   const { threads, assistantOpen, setAssistantOpen } = useOutletContext<LayoutOutletContext>()
   const [threadPanelOpen, setThreadPanelOpen] = useState(false)
   const [assistantThreadsOpen, setAssistantThreadsOpen] = useState(false)
-  const [templateDetails, setTemplateDetails] = useState<TemplateItem | null>(null)
   const [assistantClosing, setAssistantClosing] = useState(false)
   const [chatInput, setChatInput] = useState('')
   const [messages, setMessages] = useState<{ id: string; role: 'user' | 'assistant'; text: string; time: string }[]>([])
@@ -119,7 +273,7 @@ export function CanvasPage() {
     sendMessage(chatInput)
     setChatInput('')
   }, [chatInput, sendMessage])
-  const [expandedTemplate, setExpandedTemplate] = useState<string | null>(null)
+  const [canvasView, setCanvasView] = useState<'grid' | 'list'>('grid')
   const [canvasFilter, setCanvasFilter] = useState<(typeof CANVAS_FILTER_OPTIONS)[number]>('All canvases')
   const [canvasSort, setCanvasSort] = useState<(typeof CANVAS_SORT_OPTIONS)[number]>('Newest')
   const [canvasFilterOpen, setCanvasFilterOpen] = useState(false)
@@ -169,121 +323,87 @@ export function CanvasPage() {
         <ChatPanel onClose={() => setThreadPanelOpen(false)} canvasInline injectedThreads={threads} />
       )}
 
-      <div className="canvas-page__content">
-        <section className="canvas-page__overview" aria-labelledby="canvas-overview-heading">
-          <div className="canvas-page__overview-header">
-            <h1 id="canvas-overview-heading" className="canvas-page__overview-heading">
-              Welcome to AI Canvas
-            </h1>
-            <button
-              type="button"
-              className="canvas-page__overview-settings ai-button ai-button--secondary"
-              onClick={() => navigate('/canvas/settings')}
-              aria-label="Open Canvas settings"
-            >
-              <IconSettings className="canvas-page__overview-settings-icon" aria-hidden />
-              Settings
-            </button>
+      <div className="canvas-page__content canvas-page__content--hub">
+        <section className="canvas-hub__section" aria-labelledby="quick-start-heading">
+          <div className="canvas-hub__section-header">
+            <h1 id="quick-start-heading" className="canvas-hub__section-title">Quick start</h1>
+            <div className="canvas-hub__section-actions">
+              <button
+                type="button"
+                className="canvas-hub__icon-btn"
+                onClick={() => navigate('/canvas/settings')}
+                aria-label="Open Canvas settings"
+              >
+                <IconSettings className="canvas-hub__icon-btn-svg" />
+              </button>
+              <button
+                type="button"
+                className="ai-button ai-button--primary canvas-hub__new-btn"
+                aria-label="Create a new canvas"
+                onClick={() => navigate('/canvas/open')}
+              >
+                <IconPlus className="canvas-hub__new-btn-icon" aria-hidden />
+                New
+              </button>
+            </div>
           </div>
-          <p className="canvas-page__overview-description">
-            The workspace for AgenticOps: bring telemetry, teams, and agents into one place.
-            Ask once and see across domains; agents propose solutions and you approve execution.
-          </p>
-          <button type="button" className="canvas-page__create-canvas ai-button ai-button--primary" aria-label="Create a new canvas" onClick={() => navigate('/canvas/open')}>
-            <span>Create a New Canvas</span>
-          </button>
-        </section>
-
-        <section className="canvas-page__section">
-          <h2 className="canvas-page__section-title">Prompt Library</h2>
-          <div className="canvas-page__templates">
-            {TEMPLATES.map((template) => {
-              const { title, description, Icon, color, prompts } = template
-              const isExpanded = expandedTemplate === title
+          <div className="canvas-hub__quick-grid">
+            {QUICK_START.map((item) => {
+              const { title, description, Icon, prompt } = item
               return (
-                <article
+                <button
                   key={title}
-                  className={`canvas-page__template-card ${color}${isExpanded ? ' canvas-page__template-card--expanded' : ''}`}
-                  style={{ position: 'relative' }}
+                  type="button"
+                  className="canvas-hub__quick-card"
+                  onClick={() => navigate('/canvas/open', { state: { initialPrompt: prompt } })}
                 >
-                  <button
-                    type="button"
-                    className="canvas-page__template-header-btn"
-                    aria-expanded={isExpanded}
-                    onClick={() => setExpandedTemplate(isExpanded ? null : title)}
-                  >
-                    <div className="canvas-page__template-top">
-                      <div className="canvas-page__template-icon">
-                        <Icon />
-                      </div>
-                      <IconCaretDown className={`canvas-page__template-chevron${isExpanded ? ' canvas-page__template-chevron--open' : ''}`} />
-                    </div>
-                    <h3 className="canvas-page__template-title">{title}</h3>
-                    <p className="canvas-page__template-description">{description}</p>
-                  </button>
-                  {isExpanded && prompts.length > 0 && (
-                    <ul className="canvas-page__template-prompts" role="list">
-                      {prompts.map((prompt) => (
-                        <li key={prompt}>
-                          <button
-                            type="button"
-                            className="canvas-page__template-prompt-item"
-                            onClick={() => navigate('/canvas/open', { state: { initialPrompt: prompt } })}
-                          >
-                            {prompt}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </article>
+                  <span className="canvas-hub__quick-icon" aria-hidden>
+                    <Icon />
+                  </span>
+                  <span className="canvas-hub__quick-body">
+                    <span className="canvas-hub__quick-title">{title}</span>
+                    <span className="canvas-hub__quick-desc">{description}</span>
+                  </span>
+                </button>
               )
             })}
           </div>
         </section>
 
-        {templateDetails && (
-          <>
-            <div
-              className="canvas-page__template-details-backdrop"
-              onClick={() => setTemplateDetails(null)}
-              aria-hidden
-            />
-            <div
-              className="canvas-page__template-details-modal"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="template-details-title"
-            >
-              <div className="canvas-page__template-details-content">
-                <div className={`canvas-page__template-details-icon ${templateDetails.color}`}>
-                  <templateDetails.Icon />
-                </div>
-                <h2 id="template-details-title" className="canvas-page__template-details-title">
-                  {templateDetails.title}
-                </h2>
-                <p className="canvas-page__template-details-description">
-                  {templateDetails.description}
-                </p>
-                <button
-                  type="button"
-                  className="ai-button ai-button--primary canvas-page__template-details-close"
-                  onClick={() => setTemplateDetails(null)}
-                >
-                  Close
-                </button>
-              </div>
+        <section className="canvas-hub__section" aria-labelledby="pinned-heading">
+          <div className="canvas-hub__section-header">
+            <div className="canvas-hub__title-row">
+              <h2 id="pinned-heading" className="canvas-hub__section-title">Pinned canvases</h2>
+              <span
+                className="canvas-hub__info"
+                title="Pin canvases you use most often so they stay at the top of this page."
+              >
+                <IconInfoCircle className="canvas-hub__info-icon" aria-hidden />
+                <span className="canvas-settings-page__sr-only">
+                  Pin canvases you use most often so they stay at the top of this page.
+                </span>
+              </span>
             </div>
-          </>
-        )}
+            <ViewSwitcher value={canvasView} onChange={setCanvasView} />
+          </div>
+          <div className="canvas-hub__recent-grid" role="list" aria-label="Pinned canvases">
+            {PINNED_CANVASES.map((canvas) => (
+              <CanvasGalleryCard
+                key={`pin-${canvas.id}`}
+                title={canvas.title}
+                edited={canvas.edited}
+                preview={canvas.preview}
+                onOpen={() => navigate('/canvas/open')}
+              />
+            ))}
+          </div>
+        </section>
 
-        <section className="canvas-page__section">
-          <h2 className="canvas-page__section-title">All Canvases</h2>
-          <div className="canvas-page__all-toolbar">
-            <div className="canvas-page__search">
-              <IconSearch className="canvas-page__search-icon" />
-              <span className="canvas-page__search-placeholder">Search</span>
-            </div>
+        <section className="canvas-hub__section" aria-labelledby="recent-heading">
+          <div className="canvas-hub__section-header">
+            <h2 id="recent-heading" className="canvas-hub__section-title">Recent</h2>
+          </div>
+          <div className="canvas-hub__recent-toolbar">
             <div className="canvas-page__filter-wrap" ref={filterWrapRef}>
               <button
                 type="button"
@@ -291,9 +411,9 @@ export function CanvasPage() {
                 onClick={() => setCanvasFilterOpen((open) => !open)}
                 aria-expanded={canvasFilterOpen}
                 aria-haspopup="listbox"
-                aria-label="Filter and sort canvases"
+                aria-label="Filter canvases"
               >
-                <span>{canvasFilter} · {canvasSort}</span>
+                <span>{canvasFilter}</span>
                 <IconCaretDown className="canvas-page__select-icon" />
               </button>
               {canvasFilterOpen && (
@@ -339,42 +459,58 @@ export function CanvasPage() {
                 </div>
               )}
             </div>
-            <span className="canvas-page__results">{CANVAS_LIST_ROWS.length} results</span>
+            <span className="canvas-page__results">{RECENT_CANVASES.length} results</span>
+            <div className="canvas-hub__toolbar-spacer" />
+            <ViewSwitcher value={canvasView} onChange={setCanvasView} />
           </div>
 
-          <div className="canvas-page__list-view" role="region" aria-label="Canvas list">
-            <table className="canvas-page__list-table">
-              <thead>
-                <tr>
-                  <th className="canvas-page__list-th canvas-page__list-th--name">Name</th>
-                  <th className="canvas-page__list-th">Created</th>
-                  <th className="canvas-page__list-th">Modified</th>
-                  <th className="canvas-page__list-th">Owner</th>
-                  <th className="canvas-page__list-th canvas-page__list-th--actions" aria-label="Actions" />
-                </tr>
-              </thead>
-              <tbody>
-                {CANVAS_LIST_ROWS.map((row) => (
-                  <tr key={row.id} className="canvas-page__list-row">
-                    <td className="canvas-page__list-td canvas-page__list-td--name">{row.name}</td>
-                    <td className="canvas-page__list-td">{row.created}</td>
-                    <td className="canvas-page__list-td">{row.modified}</td>
-                    <td className="canvas-page__list-td">{row.owner}</td>
-                    <td className="canvas-page__list-td canvas-page__list-td--actions">
-                      <button type="button" className="canvas-page__list-action" aria-label={`Options for ${row.name}`}>
-                        <IconDotsThree />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <div className="canvas-page__list-pagination">
-              <span className="canvas-page__list-pagination-info">
-                Showing 1–{CANVAS_LIST_ROWS.length} of {CANVAS_LIST_ROWS.length}
-              </span>
+          {canvasView === 'grid' ? (
+            <div className="canvas-hub__recent-grid" role="list" aria-label="All canvases">
+              {RECENT_CANVASES.map((canvas) => (
+                <CanvasGalleryCard
+                  key={canvas.id}
+                  title={canvas.title}
+                  edited={canvas.edited}
+                  preview={canvas.preview}
+                  onOpen={() => navigate('/canvas/open')}
+                />
+              ))}
             </div>
-          </div>
+          ) : (
+            <div className="canvas-page__list-view" role="region" aria-label="Canvas list">
+              <table className="canvas-page__list-table">
+                <thead>
+                  <tr>
+                    <th className="canvas-page__list-th canvas-page__list-th--name">Name</th>
+                    <th className="canvas-page__list-th">Created</th>
+                    <th className="canvas-page__list-th">Modified</th>
+                    <th className="canvas-page__list-th">Owner</th>
+                    <th className="canvas-page__list-th canvas-page__list-th--actions" aria-label="Actions" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {CANVAS_LIST_ROWS.map((row) => (
+                    <tr key={row.id} className="canvas-page__list-row">
+                      <td className="canvas-page__list-td canvas-page__list-td--name">{row.name}</td>
+                      <td className="canvas-page__list-td">{row.created}</td>
+                      <td className="canvas-page__list-td">{row.modified}</td>
+                      <td className="canvas-page__list-td">{row.owner}</td>
+                      <td className="canvas-page__list-td canvas-page__list-td--actions">
+                        <button type="button" className="canvas-page__list-action" aria-label={`Options for ${row.name}`}>
+                          <IconDotsThree />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="canvas-page__list-pagination">
+                <span className="canvas-page__list-pagination-info">
+                  Showing 1–{CANVAS_LIST_ROWS.length} of {CANVAS_LIST_ROWS.length}
+                </span>
+              </div>
+            </div>
+          )}
         </section>
       </div>
 

@@ -3020,6 +3020,444 @@ button, a {
   max-width: 960px;
 }
 
+.canvas-page__content--hub {
+  gap: var(--spacing-500);
+  align-items: stretch;
+  padding-bottom: var(--spacing-800);
+}
+
+.canvas-page__content--hub > * {
+  max-width: none;
+}
+
+.canvas-hub__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-200);
+}
+
+.canvas-hub__section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-200);
+}
+
+.canvas-hub__title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-100);
+}
+
+.canvas-hub__section-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 22px;
+  color: var(--brand-text-default);
+}
+
+.canvas-hub__section-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-100);
+}
+
+.canvas-hub__icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--brand-icon-default);
+  cursor: pointer;
+}
+
+.canvas-hub__icon-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.canvas-hub__icon-btn-svg {
+  width: 18px;
+  height: 18px;
+}
+
+.canvas-hub__new-btn {
+  gap: 6px;
+  height: 34px;
+  padding: 6px 14px;
+}
+
+.canvas-hub__new-btn-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.canvas-hub__info {
+  display: inline-flex;
+  color: rgba(255, 255, 255, 0.45);
+  cursor: help;
+}
+
+.canvas-hub__info-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.canvas-hub__view-toggle {
+  display: flex;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.canvas-hub__view-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 34px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+}
+
+.canvas-hub__view-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.canvas-hub__view-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--brand-text-default);
+}
+
+.canvas-hub__view-btn--active {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--brand-text-default);
+}
+
+.canvas-hub__quick-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--spacing-200);
+}
+
+.canvas-hub__quick-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-200);
+  min-width: 0;
+  padding: 14px 16px;
+  text-align: left;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: inherit;
+  cursor: pointer;
+}
+
+.canvas-hub__quick-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.canvas-hub__quick-card:focus-visible {
+  outline: 2px solid var(--interact-border-default);
+  outline-offset: 2px;
+}
+
+.canvas-hub__quick-icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--brand-icon-default);
+}
+
+.canvas-hub__quick-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.canvas-hub__quick-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.canvas-hub__quick-title {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 18px;
+  color: var(--brand-text-default);
+}
+
+.canvas-hub__quick-desc {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.canvas-hub__recent-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-200);
+}
+
+.canvas-hub__toolbar-spacer {
+  flex: 1;
+}
+
+.canvas-hub__recent-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--spacing-200);
+}
+
+.canvas-hub__recent-card {
+  min-width: 0;
+  padding: var(--spacing-300);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-200);
+}
+
+.canvas-hub__recent-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-100);
+}
+
+.canvas-hub__recent-open {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+
+.canvas-hub__recent-title {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 20px;
+  color: var(--brand-text-default);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.canvas-hub__recent-meta {
+  font-size: 12px;
+  line-height: 16px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.canvas-hub__recent-preview {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.canvas-hub__recent-preview:focus-visible {
+  outline: 2px solid var(--interact-border-default);
+  outline-offset: 2px;
+}
+
+.canvas-hub__thumb {
+  position: relative;
+  width: 100%;
+  height: 168px;
+  border-radius: 8px;
+  background:
+    radial-gradient(80% 80% at 70% 80%, rgba(88, 28, 135, 0.35), transparent 70%),
+    radial-gradient(60% 80% at 20% 100%, rgba(29, 78, 216, 0.22), transparent 65%),
+    #05070c;
+  overflow: hidden;
+}
+
+.canvas-hub__widget {
+  position: absolute;
+  border-radius: 8px;
+  background: rgba(12, 16, 24, 0.92);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.canvas-hub__widget--cyan {
+  border: 1.5px solid #22d3ee;
+}
+
+.canvas-hub__widget--teal {
+  border: 1.5px solid #2dd4bf;
+}
+
+.canvas-hub__widget--gold {
+  border: 1.5px solid #fbbf24;
+}
+
+.canvas-hub__widget--magenta {
+  border: 1.5px solid #e879f9;
+}
+
+.canvas-hub__widget--lime {
+  border: 1.5px solid #84cc16;
+}
+
+.canvas-hub__thumb--charts .canvas-hub__widget:first-child {
+  left: 10%;
+  top: 22%;
+  width: 38%;
+  height: 58%;
+}
+
+.canvas-hub__thumb--charts .canvas-hub__widget:last-child {
+  right: 10%;
+  top: 18%;
+  width: 38%;
+  height: 62%;
+}
+
+.canvas-hub__thumb--flow .canvas-hub__widget--gold {
+  left: 8%;
+  top: 16%;
+  width: 28%;
+  height: 68%;
+}
+
+.canvas-hub__thumb--flow .canvas-hub__widget--magenta {
+  left: 38%;
+  top: 10%;
+  width: 24%;
+  height: 78%;
+}
+
+.canvas-hub__thumb--flow .canvas-hub__widget--lime {
+  right: 8%;
+  top: 22%;
+  width: 28%;
+  height: 56%;
+}
+
+.canvas-hub__thumb--ops .canvas-hub__widget--cyan {
+  left: 10%;
+  top: 22%;
+  width: 32%;
+  height: 48%;
+}
+
+.canvas-hub__thumb--ops .canvas-hub__widget--lime {
+  left: 46%;
+  top: 16%;
+  width: 22%;
+  height: 42%;
+}
+
+.canvas-hub__thumb--ops .canvas-hub__widget--gold {
+  right: 8%;
+  top: 28%;
+  width: 24%;
+  height: 52%;
+}
+
+.canvas-hub__widget--stack,
+.canvas-hub__widget--phone,
+.canvas-hub__widget--wide {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 10px;
+}
+
+.canvas-hub__widget--stack span,
+.canvas-hub__widget--phone span,
+.canvas-hub__widget--wide span {
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.canvas-hub__widget--phone span:nth-child(2) {
+  width: 70%;
+}
+
+.canvas-hub__spark {
+  display: block;
+  width: 70%;
+  height: 36%;
+  margin: 28% auto 0;
+  border-radius: 2px;
+}
+
+.canvas-hub__spark--line {
+  background: linear-gradient(135deg, transparent 40%, currentColor 41%, currentColor 44%, transparent 45%);
+  color: #67e8f9;
+  border-bottom: 2px solid currentColor;
+  opacity: 0.85;
+}
+
+.canvas-hub__spark--curve {
+  background: radial-gradient(120% 80% at 20% 80%, transparent 50%, #a3e635 51%, transparent 56%);
+  border-bottom: 2px solid #a3e635;
+}
+
+.canvas-hub__spark--bars {
+  background:
+    linear-gradient(#a3e635, #a3e635) 15% 100% / 12% 55% no-repeat,
+    linear-gradient(#a3e635, #a3e635) 40% 100% / 12% 80% no-repeat,
+    linear-gradient(#a3e635, #a3e635) 65% 100% / 12% 40% no-repeat,
+    linear-gradient(#a3e635, #a3e635) 90% 100% / 12% 70% no-repeat;
+}
+
+@media (max-width: 1280px) {
+  .canvas-hub__quick-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1100px) {
+  .canvas-hub__recent-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .canvas-hub__quick-grid,
+  .canvas-hub__recent-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Overview of AI Canvas – single column */
 .canvas-page__overview {
   display: flex;

@@ -30,6 +30,17 @@ export type AssistantAdviceStyle =
 /** Change velocity / risk appetite for rollout-style guidance. */
 export type OperationalPosturePref = '' | 'stability-first' | 'balanced' | 'innovation-friendly'
 
+/** Typical span of authority for recommendations and ownership language. */
+export type DecisionAuthorityPref =
+  | ''
+  | 'individual-contributor'
+  | 'team-lead'
+  | 'program-owner'
+  | 'executive-advisor'
+
+/** Default time horizon for plans, roadmaps, and tradeoff framing. */
+export type PlanningHorizonPref = '' | 'tactical' | 'quarterly' | 'strategic'
+
 /** High-level role context so the assistant can narrow tone, examples, and priorities. */
 export type EnterpriseRoleContext = {
   /** Job title or how the user describes their role */
@@ -42,6 +53,16 @@ export type EnterpriseRoleContext = {
   stakeholderAudience: string
   /** Tools, stacks, or platforms to prefer in examples (Meraki, Intersight, …) */
   primaryTools: string
+  /** Regulatory, audit, or policy context that should shape answers */
+  complianceScope: string
+  /** Internal programs, frameworks, or vocabulary (OKRs, PI names, standards) */
+  orgLanguageAndPrograms: string
+  /** Recurring themes to lean into (cost, resilience, Zero Trust, …) */
+  workThemes: string
+  /** Topics, tone, or assumptions the assistant should avoid */
+  assistantAvoid: string
+  decisionAuthority: DecisionAuthorityPref
+  planningHorizon: PlanningHorizonPref
   adviceStyle: AssistantAdviceStyle
   operationalPosture: OperationalPosturePref
 }
@@ -52,6 +73,12 @@ export const DEFAULT_ENTERPRISE_ROLE_CONTEXT: EnterpriseRoleContext = {
   roleMission: '',
   stakeholderAudience: '',
   primaryTools: '',
+  complianceScope: '',
+  orgLanguageAndPrograms: '',
+  workThemes: '',
+  assistantAvoid: '',
+  decisionAuthority: '',
+  planningHorizon: '',
   adviceStyle: '',
   operationalPosture: '',
 }
@@ -68,6 +95,21 @@ export const OPERATIONAL_POSTURE_OPTIONS: { value: OperationalPosturePref; label
   { value: 'stability-first', label: 'Stability-first (minimize change risk)' },
   { value: 'balanced', label: 'Balanced change and reliability' },
   { value: 'innovation-friendly', label: 'Open to newer approaches when justified' },
+]
+
+export const DECISION_AUTHORITY_OPTIONS: { value: DecisionAuthorityPref; label: string }[] = [
+  { value: '', label: 'Select authority…' },
+  { value: 'individual-contributor', label: 'Individual contributor (recommendations for my work)' },
+  { value: 'team-lead', label: 'Team / squad lead (team-level tradeoffs)' },
+  { value: 'program-owner', label: 'Program or domain owner (cross-team outcomes)' },
+  { value: 'executive-advisor', label: 'Executive or steering context (brief, decision-ready)' },
+]
+
+export const PLANNING_HORIZON_OPTIONS: { value: PlanningHorizonPref; label: string }[] = [
+  { value: '', label: 'Select horizon…' },
+  { value: 'tactical', label: 'Tactical (days to weeks)' },
+  { value: 'quarterly', label: 'Quarterly roadmaps' },
+  { value: 'strategic', label: 'Strategic (multi-quarter / multi-year)' },
 ]
 
 export type PersonalizationEntryKind = 'preference' | 'constraint' | 'context' | 'fact'
@@ -175,6 +217,16 @@ const POSTURE_SET = new Set<OperationalPosturePref>([
   'innovation-friendly',
 ])
 
+const DECISION_AUTHORITY_SET = new Set<DecisionAuthorityPref>([
+  '',
+  'individual-contributor',
+  'team-lead',
+  'program-owner',
+  'executive-advisor',
+])
+
+const PLANNING_HORIZON_SET = new Set<PlanningHorizonPref>(['', 'tactical', 'quarterly', 'strategic'])
+
 function normalizeEnterpriseRoleContext(raw: unknown): EnterpriseRoleContext {
   const d = DEFAULT_ENTERPRISE_ROLE_CONTEXT
   const o = raw && typeof raw === 'object' ? (raw as Partial<EnterpriseRoleContext>) : {}
@@ -187,6 +239,16 @@ function normalizeEnterpriseRoleContext(raw: unknown): EnterpriseRoleContext {
     POSTURE_SET.has(o.operationalPosture as OperationalPosturePref)
       ? (o.operationalPosture as OperationalPosturePref)
       : d.operationalPosture
+  const decisionAuthority =
+    typeof o.decisionAuthority === 'string' &&
+    DECISION_AUTHORITY_SET.has(o.decisionAuthority as DecisionAuthorityPref)
+      ? (o.decisionAuthority as DecisionAuthorityPref)
+      : d.decisionAuthority
+  const planningHorizon =
+    typeof o.planningHorizon === 'string' &&
+    PLANNING_HORIZON_SET.has(o.planningHorizon as PlanningHorizonPref)
+      ? (o.planningHorizon as PlanningHorizonPref)
+      : d.planningHorizon
   return {
     roleTitle: typeof o.roleTitle === 'string' ? o.roleTitle : d.roleTitle,
     teamOrgScope: typeof o.teamOrgScope === 'string' ? o.teamOrgScope : d.teamOrgScope,
@@ -194,6 +256,13 @@ function normalizeEnterpriseRoleContext(raw: unknown): EnterpriseRoleContext {
     stakeholderAudience:
       typeof o.stakeholderAudience === 'string' ? o.stakeholderAudience : d.stakeholderAudience,
     primaryTools: typeof o.primaryTools === 'string' ? o.primaryTools : d.primaryTools,
+    complianceScope: typeof o.complianceScope === 'string' ? o.complianceScope : d.complianceScope,
+    orgLanguageAndPrograms:
+      typeof o.orgLanguageAndPrograms === 'string' ? o.orgLanguageAndPrograms : d.orgLanguageAndPrograms,
+    workThemes: typeof o.workThemes === 'string' ? o.workThemes : d.workThemes,
+    assistantAvoid: typeof o.assistantAvoid === 'string' ? o.assistantAvoid : d.assistantAvoid,
+    decisionAuthority,
+    planningHorizon,
     adviceStyle,
     operationalPosture,
   }
@@ -280,12 +349,29 @@ export function formatPersonalizationForAssistantContext(userId: string): string
     balanced: 'balanced change and reliability',
     'innovation-friendly': 'open to newer approaches when justified',
   }
+  const authorityLabels: Record<string, string> = {
+    'individual-contributor': 'individual contributor',
+    'team-lead': 'team / squad lead',
+    'program-owner': 'program or domain owner',
+    'executive-advisor': 'executive or steering context',
+  }
+  const horizonLabels: Record<string, string> = {
+    tactical: 'tactical (days to weeks)',
+    quarterly: 'quarterly roadmaps',
+    strategic: 'strategic (multi-quarter / multi-year)',
+  }
   const hasErc =
     erc.roleTitle.trim().length > 0 ||
     erc.teamOrgScope.trim().length > 0 ||
     erc.roleMission.trim().length > 0 ||
     erc.stakeholderAudience.trim().length > 0 ||
     erc.primaryTools.trim().length > 0 ||
+    erc.complianceScope.trim().length > 0 ||
+    erc.orgLanguageAndPrograms.trim().length > 0 ||
+    erc.workThemes.trim().length > 0 ||
+    erc.assistantAvoid.trim().length > 0 ||
+    erc.decisionAuthority !== '' ||
+    erc.planningHorizon !== '' ||
     erc.adviceStyle !== '' ||
     erc.operationalPosture !== ''
   if (data.enterpriseFunction) {
@@ -307,6 +393,24 @@ export function formatPersonalizationForAssistantContext(userId: string): string
     }
     if (erc.primaryTools.trim()) {
       lines.push(`Primary tools & platforms (prefer in examples): ${erc.primaryTools.trim()}`)
+    }
+    if (erc.complianceScope.trim()) {
+      lines.push(`Compliance / regulatory context: ${erc.complianceScope.trim()}`)
+    }
+    if (erc.orgLanguageAndPrograms.trim()) {
+      lines.push(`Org language & programs (use consistently): ${erc.orgLanguageAndPrograms.trim()}`)
+    }
+    if (erc.workThemes.trim()) {
+      lines.push(`Themes to emphasize: ${erc.workThemes.trim()}`)
+    }
+    if (erc.assistantAvoid.trim()) {
+      lines.push(`Avoid or de-emphasize: ${erc.assistantAvoid.trim()}`)
+    }
+    if (erc.decisionAuthority) {
+      lines.push(`Decision authority span: ${ercLabel(authorityLabels, erc.decisionAuthority)}.`)
+    }
+    if (erc.planningHorizon) {
+      lines.push(`Default planning horizon: ${ercLabel(horizonLabels, erc.planningHorizon)}.`)
     }
     if (erc.adviceStyle) {
       lines.push(`How to advise: ${ercLabel(adviceLabels, erc.adviceStyle)}.`)
@@ -399,6 +503,12 @@ function enterpriseRoleContextPopulated(r: EnterpriseRoleContext): boolean {
     r.roleMission.trim().length > 0 ||
     r.stakeholderAudience.trim().length > 0 ||
     r.primaryTools.trim().length > 0 ||
+    r.complianceScope.trim().length > 0 ||
+    r.orgLanguageAndPrograms.trim().length > 0 ||
+    r.workThemes.trim().length > 0 ||
+    r.assistantAvoid.trim().length > 0 ||
+    r.decisionAuthority !== '' ||
+    r.planningHorizon !== '' ||
     r.adviceStyle !== '' ||
     r.operationalPosture !== ''
   )

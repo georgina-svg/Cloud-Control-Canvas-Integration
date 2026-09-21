@@ -2,9 +2,11 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ASSISTANT_ADVICE_STYLE_OPTIONS,
+  DECISION_AUTHORITY_OPTIONS,
   ENTERPRISE_FUNCTIONS,
   LOCAL_DEMO_USER_ID,
   OPERATIONAL_POSTURE_OPTIONS,
+  PLANNING_HORIZON_OPTIONS,
   type AiToneSettings,
   type EnterpriseFunction,
   type EnterpriseRoleContext,
@@ -300,6 +302,134 @@ export function CanvasSettingsPage() {
                   aria-describedby="primary-tools-hint"
                   autoComplete="off"
                 />
+              </div>
+
+              <div className="canvas-settings-page__field canvas-settings-page__field--wide">
+                <label htmlFor="compliance-scope" className="canvas-settings-page__label">
+                  Compliance & regulatory context
+                </label>
+                <p className="canvas-settings-page__hint" id="compliance-scope-hint">
+                  Standards, audits, or policies that should shape how the assistant frames risk and change (e.g.
+                  FedRAMP, SOX, internal change windows).
+                </p>
+                <textarea
+                  id="compliance-scope"
+                  className="canvas-settings-page__textarea"
+                  rows={2}
+                  value={model.enterpriseRoleContext.complianceScope}
+                  onChange={(e) => setEnterpriseRoleContext({ complianceScope: e.target.value })}
+                  placeholder="e.g. Change freezes in November; PCI scope on retail VLANs."
+                  aria-describedby="compliance-scope-hint"
+                />
+              </div>
+
+              <div className="canvas-settings-page__field canvas-settings-page__field--wide">
+                <label htmlFor="org-language" className="canvas-settings-page__label">
+                  Org language & programs
+                </label>
+                <p className="canvas-settings-page__hint" id="org-language-hint">
+                  Internal names, frameworks, or vocabulary the assistant should mirror (PI names, OKRs, standard
+                  playbooks).
+                </p>
+                <input
+                  id="org-language"
+                  className="canvas-settings-page__text-input"
+                  type="text"
+                  value={model.enterpriseRoleContext.orgLanguageAndPrograms}
+                  onChange={(e) => setEnterpriseRoleContext({ orgLanguageAndPrograms: e.target.value })}
+                  placeholder="e.g. OpEx gate, Golden Path architecture, Q3 reliability OKR"
+                  aria-describedby="org-language-hint"
+                  autoComplete="off"
+                />
+              </div>
+
+              <div className="canvas-settings-page__field canvas-settings-page__field--wide">
+                <label htmlFor="work-themes" className="canvas-settings-page__label">
+                  Themes to emphasize
+                </label>
+                <p className="canvas-settings-page__hint" id="work-themes-hint">
+                  Recurring priorities so answers stay aligned with what matters most in your role.
+                </p>
+                <textarea
+                  id="work-themes"
+                  className="canvas-settings-page__textarea"
+                  rows={2}
+                  value={model.enterpriseRoleContext.workThemes}
+                  onChange={(e) => setEnterpriseRoleContext({ workThemes: e.target.value })}
+                  placeholder="e.g. Cost-to-serve, automation first, Zero Trust rollout, vendor consolidation."
+                  aria-describedby="work-themes-hint"
+                />
+              </div>
+
+              <div className="canvas-settings-page__field canvas-settings-page__field--wide">
+                <label htmlFor="assistant-avoid" className="canvas-settings-page__label">
+                  What the assistant should avoid
+                </label>
+                <p className="canvas-settings-page__hint" id="assistant-avoid-hint">
+                  Assumptions, jargon, or directions you do not want (e.g. “don’t assume public cloud only”).
+                </p>
+                <textarea
+                  id="assistant-avoid"
+                  className="canvas-settings-page__textarea"
+                  rows={2}
+                  value={model.enterpriseRoleContext.assistantAvoid}
+                  onChange={(e) => setEnterpriseRoleContext({ assistantAvoid: e.target.value })}
+                  placeholder="e.g. Avoid suggesting deprecated APIs; don’t assume we own the WAN edge."
+                  aria-describedby="assistant-avoid-hint"
+                />
+              </div>
+
+              <div className="canvas-settings-page__acronym-grid">
+                <div className="canvas-settings-page__field">
+                  <label htmlFor="decision-authority" className="canvas-settings-page__label">
+                    Decision authority span
+                  </label>
+                  <p className="canvas-settings-page__hint" id="decision-authority-hint">
+                    How far ownership and recommendations should read in your enterprise role.
+                  </p>
+                  <select
+                    id="decision-authority"
+                    className="canvas-settings-page__select"
+                    aria-describedby="decision-authority-hint"
+                    value={model.enterpriseRoleContext.decisionAuthority}
+                    onChange={(e) =>
+                      setEnterpriseRoleContext({
+                        decisionAuthority: e.target.value as EnterpriseRoleContext['decisionAuthority'],
+                      })
+                    }
+                  >
+                    {DECISION_AUTHORITY_OPTIONS.map((opt, i) => (
+                      <option key={`auth-${i}-${opt.value}`} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="canvas-settings-page__field">
+                  <label htmlFor="planning-horizon" className="canvas-settings-page__label">
+                    Default planning horizon
+                  </label>
+                  <p className="canvas-settings-page__hint" id="planning-horizon-hint">
+                    Time span for roadmaps, tradeoffs, and “when” language in guidance.
+                  </p>
+                  <select
+                    id="planning-horizon"
+                    className="canvas-settings-page__select"
+                    aria-describedby="planning-horizon-hint"
+                    value={model.enterpriseRoleContext.planningHorizon}
+                    onChange={(e) =>
+                      setEnterpriseRoleContext({
+                        planningHorizon: e.target.value as EnterpriseRoleContext['planningHorizon'],
+                      })
+                    }
+                  >
+                    {PLANNING_HORIZON_OPTIONS.map((opt, i) => (
+                      <option key={`horizon-${i}-${opt.value}`} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div className="canvas-settings-page__acronym-grid">
